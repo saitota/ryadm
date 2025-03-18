@@ -586,7 +586,7 @@ yadm will create a symbolic link which looks like this:
 
 .IR $HOME/path/example.txt " -> " $HOME/path/example.txt##os.Darwin,hostname.host2
 
-However, on another Mackbook named "host3", yadm will create a symbolic link
+However, on another Macbook named "host3", yadm will create a symbolic link
 which looks like this:
 
 .IR $HOME/path/example.txt " -> " $HOME/path/example.txt##os.Darwin
@@ -669,7 +669,7 @@ which is available on most *nix systems. To use this processor,
 specify the value of "default" or just leave the value off (e.g. "##template").
 
 .BR NOTE :
-This template processor performs case-insensitive comparisions in if statements.
+This template processor performs case-insensitive comparisons in if statements.
 .TP
 .B ESH
 ESH is a template processor written in POSIX compliant shell. It allows
@@ -756,7 +756,7 @@ would look like:
   {% include 'whatever.extra' %}
   {% endif -%}
 
-An equivalent ESH templated named
+An equivalent ESH template named
 .I whatever##template.esh
 would look like:
 
@@ -803,7 +803,7 @@ For example:
 .RE
 
 Standard filename expansions (*, ?, [) are supported. Two consecutive asterisks
-"**" can be used to match all subdirectories.  Other shell expansions like
+"**" can be used to match all sub-directories.  Other shell expansions like
 brace and tilde are not supported.  Spaces in paths are supported, and should
 not be quoted.  If a directory is specified, its contents will be included.
 Paths beginning with a "!" will be excluded.
