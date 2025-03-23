@@ -492,6 +492,10 @@ These are the supported attributes, in the order of the weighted precedence:
 Valid when the value matches a supported template processor.
 See the TEMPLATES section for more details.
 .TP
+.BR seed ,\  s
+Same as template, but only valid if the target file doesn't exist. I.e. the
+file will be "seeded" from the template on the first run.
+.TP
 .BR user ,\  u
 Valid if the value matches the current user.
 Current user is calculated by running

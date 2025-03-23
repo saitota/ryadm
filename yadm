@@ -222,17 +222,17 @@ function score_file() {
         # extension isn't a condition and doesn't affect the score
         continue
         ;;
-      t | template | yadm)
+      s | seed | t | template | yadm)
         if ((negate)); then
           INVALID_ALT+=("$source")
-        else
+        elif [ "${label:0:1}" != "s" ] || [ ! -e "$target" ]; then
           template_processor=$(choose_template_processor "$value")
           if [ -n "$template_processor" ]; then
             delta=0
           elif [ -n "$loud" ]; then
-            echo "No supported template processor for template $source"
+            echo "No supported template processor for $source"
           else
-            debug "No supported template processor for template $source"
+            debug "No supported template processor for $source"
           fi
         fi
         ;;

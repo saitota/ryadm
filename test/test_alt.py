@@ -196,6 +196,49 @@ def test_alt_template_with_condition(runner, paths, tst_arch):
 
 
 @pytest.mark.usefixtures("ds1_copy")
+@pytest.mark.parametrize("kind", ["default", None, "envtpl", "j2", "esh"])
+@pytest.mark.parametrize(
+    "label",
+    [
+        "s",
+        "seed",
+    ],
+)
+def test_alt_seed(runner, paths, kind, label):
+    """Test template seed"""
+    yadm_dir, yadm_data = setup_standard_yadm_dir(paths)
+
+    suffix = f"##{label}.{kind}"
+    if kind is None:
+        suffix = f"##{label}"
+
+    utils.create_alt_files(paths, suffix, content="first")
+    run = runner([paths.pgm, "-Y", yadm_dir, "--yadm-data", yadm_data, "alt"])
+    assert run.success
+    assert run.err == ""
+
+    utils.create_alt_files(paths, suffix, preserve=True, content="second")
+    run2 = runner([paths.pgm, "-Y", yadm_dir, "--yadm-data", yadm_data, "alt"])
+    assert run2.success
+    assert run2.err == ""
+
+    created = utils.parse_alt_output(run.out, linked=False)
+    created2 = utils.parse_alt_output(run2.out, linked=False)
+    assert len(created2) == 0
+
+    for created_path in TEST_PATHS:
+        source_file_content = created_path + suffix
+        source_file = paths.work.join(source_file_content)
+        created_file = paths.work.join(created_path)
+        if created_path == utils.ALT_DIR:
+            source_file = source_file.join(utils.CONTAINED)
+            created_file = created_file.join(utils.CONTAINED)
+        assert created_file.isfile()
+        assert created_file.read().strip() == source_file_content + "\nfirst"
+        assert str(source_file) in created
+
+
+@pytest.mark.usefixtures("ds1_copy")
 @pytest.mark.parametrize("autoalt", [None, "true", "false"])
 def test_auto_alt(runner, yadm_cmd, paths, autoalt):
     """Test auto alt"""
