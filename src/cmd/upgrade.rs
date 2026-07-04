@@ -200,4 +200,3 @@ fn git_mv(ctx: &Context, from: &str, to: &str) -> bool {
     c.args(["mv", from, to]);
     c.status().map(|s| s.success()).unwrap_or(false)
 }
-
