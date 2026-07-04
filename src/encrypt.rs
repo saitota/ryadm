@@ -484,7 +484,8 @@ mod tests {
 
     // Tests that call parse_encrypt() mutate process-global state (GIT_DIR
     // env var, and the process's CWD via cd_work) and must not run
-    // concurrently with each other or with themselves across threads.
+    // concurrently with each other or with themselves across threads. See the
+    // process-global-state contract documented on `git::cmd`.
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     static COUNTER: AtomicU64 = AtomicU64::new(0);

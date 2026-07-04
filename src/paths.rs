@@ -115,7 +115,7 @@ pub fn issue_legacy_path_warning(ctx: &mut Context, main_args: &[String]) {
     ];
     let hooks_base = format!("{}/{}", ctx.legacy_dir, ctx.hooks_dir);
     for prefix in ["pre_", "post_"] {
-        candidates.extend(glob_prefix(&hooks_base, prefix));
+        candidates.extend(util::glob_prefix(&hooks_base, prefix));
     }
     candidates.push(format!("{}/{}", ctx.legacy_dir, LEGACY_ARCHIVE));
 
@@ -162,22 +162,6 @@ pub fn issue_legacy_path_warning(ctx: &mut Context, main_args: &[String]) {
         path_list = path_list
     );
     ctx.legacy_warning_issued = true;
-}
-
-/// Expand a `dir/prefix*` glob: sorted matches, or nothing when none match
-/// (the unexpanded literal pattern never passes the -e test in yadm).
-fn glob_prefix(dir: &str, prefix: &str) -> Vec<String> {
-    let mut matches: Vec<String> = match std::fs::read_dir(dir) {
-        Ok(entries) => entries
-            .filter_map(|e| e.ok())
-            .filter_map(|e| e.file_name().into_string().ok())
-            .filter(|name| name.starts_with(prefix) && name.len() > prefix.len())
-            .map(|name| format!("{dir}/{name}"))
-            .collect(),
-        Err(_) => Vec::new(),
-    };
-    matches.sort();
-    matches
 }
 
 pub fn configure_paths(ctx: &mut Context) {
@@ -232,6 +216,9 @@ pub fn configure_paths(ctx: &mut Context) {
 }
 
 /// yadm's builtin_dirname — including its quirks (e.g. dirname of "/" is ".").
+///
+/// Duplicated as a bash string in `hooks::EXPORTED_FUNCTIONS`; keep the two in
+/// sync when changing yadm's path semantics.
 pub fn builtin_dirname(path: &str) -> String {
     let mut p = path.to_string();
     while p.ends_with('/') {
@@ -254,6 +241,9 @@ pub fn builtin_dirname(path: &str) -> String {
 }
 
 /// yadm's relative_path: a path to `full`, relative to `base`.
+///
+/// Duplicated as a bash string in `hooks::EXPORTED_FUNCTIONS`; keep the two in
+/// sync when changing yadm's path semantics.
 pub fn relative_path(base_in: &str, full_in: &str) -> String {
     let pwd = std::env::current_dir()
         .map(|p| p.to_string_lossy().into_owned())
@@ -337,6 +327,9 @@ pub fn cd_work(ctx: &Context, what: &str) -> bool {
 }
 
 /// Path used by bash/yadm itself (cygpath -u on Cygwin; identity elsewhere).
+///
+/// Duplicated as a bash string in `hooks::EXPORTED_FUNCTIONS`; keep the two in
+/// sync when changing yadm's path semantics.
 pub fn unix_path(ctx: &Context, path: &str) -> String {
     if ctx.use_cygpath {
         os::capture("cygpath", &["-u", path])
@@ -346,6 +339,9 @@ pub fn unix_path(ctx: &Context, path: &str) -> String {
 }
 
 /// Path handed to Git (cygpath -m on Cygwin; identity elsewhere).
+///
+/// Duplicated as a bash string in `hooks::EXPORTED_FUNCTIONS`; keep the two in
+/// sync when changing yadm's path semantics.
 pub fn mixed_path(ctx: &Context, path: &str) -> String {
     if ctx.use_cygpath {
         os::capture("cygpath", &["-m", path])
