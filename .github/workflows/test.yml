@@ -20,8 +20,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # dtolnay/rust-toolchain only publishes the moving `stable` branch (no
-      # semver tag tracks it), so pin its current HEAD by SHA.
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
         with:
           components: rustfmt, clippy
