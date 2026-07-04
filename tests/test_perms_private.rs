@@ -33,12 +33,12 @@ fn seed_private_files(tb: &TestBed) {
 #[test]
 fn perms_cli_produces_no_output_and_exits_zero() {
     let tb = TestBed::new("perms-cli-silent");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     seed_private_files(&tb);
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -47,7 +47,7 @@ fn perms_cli_produces_no_output_and_exits_zero() {
 #[test]
 fn perms_secures_ssh_and_gnupg_files_go_rwx() {
     let tb = TestBed::new("perms-secures-ssh-gnupg");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     seed_private_files(&tb);
@@ -63,7 +63,7 @@ fn perms_secures_ssh_and_gnupg_files_go_rwx() {
         assert!(!secured(tb.mode(p)), "{p} unexpectedly pre-secured");
     }
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
 
     for p in [
@@ -86,14 +86,14 @@ fn perms_secures_ssh_and_gnupg_files_go_rwx() {
 fn perms_exact_mode_transitions_go_rwx_keeps_user_bits() {
     // go-rwx is a *relative* chmod: user bits untouched, group/other cleared.
     let tb = TestBed::new("perms-exact-modes");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     tb.write_home_mode(".ssh/a", "a\n", 0o755);
     tb.write_home_mode(".ssh/b", "b\n", 0o644);
     tb.write_home_mode(".ssh/c", "c\n", 0o777);
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
 
     assert_eq!(tb.mode(".ssh/a"), 0o700);
@@ -104,7 +104,7 @@ fn perms_exact_mode_transitions_go_rwx_keeps_user_bits() {
 #[test]
 fn perms_does_not_touch_worktree_root_mode() {
     let tb = TestBed::new("perms-worktree-root-untouched");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
@@ -114,7 +114,7 @@ fn perms_does_not_touch_worktree_root_mode() {
     )
     .unwrap();
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
 
     use std::os::unix::fs::MetadataExt;
@@ -128,11 +128,11 @@ fn perms_does_not_touch_worktree_root_mode() {
 #[test]
 fn perms_secures_archive_file_when_present() {
     let tb = TestBed::new("perms-archive");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     // YADM_ARCHIVE default location: $YADM_DATA/yadm/archive -> here
-    // tb.archive() is $YADM_DATA/archive (radm's ctx.archive base), confirm
+    // tb.archive() is $YADM_DATA/archive (ryadm's ctx.archive base), confirm
     // by writing directly there via write_home-style absolute path.
     let archive = tb.archive();
     std::fs::create_dir_all(archive.parent().unwrap()).unwrap();
@@ -143,7 +143,7 @@ fn perms_secures_archive_file_when_present() {
     )
     .unwrap();
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -158,7 +158,7 @@ fn perms_secures_encrypt_listed_files_but_not_excluded_ones() {
     // the "!" prefix excludes efile1 from ENCRYPT_INCLUDE_FILES, so only
     // efile2 gets secured by perms().
     let tb = TestBed::new("perms-encrypt-listed");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     tb.write_home_mode("efile1", "efile1", 0o644);
@@ -169,7 +169,7 @@ fn perms_secures_encrypt_listed_files_but_not_excluded_ones() {
     assert!(!secured(tb.mode("efile1")));
     assert!(!secured(tb.mode("efile2")));
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -191,14 +191,14 @@ fn perms_secures_encrypt_listed_files_but_not_excluded_ones() {
 #[test]
 fn ssh_perms_false_leaves_ssh_untouched_but_still_secures_gnupg() {
     let tb = TestBed::new("perms-ssh-false");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
-    let r = tb.radm(&["config", "yadm.ssh-perms", "false"]);
+    let r = tb.ryadm(&["config", "yadm.ssh-perms", "false"]);
     assert!(r.success());
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -216,14 +216,14 @@ fn ssh_perms_false_leaves_ssh_untouched_but_still_secures_gnupg() {
 #[test]
 fn gpg_perms_false_leaves_gnupg_untouched_but_still_secures_ssh() {
     let tb = TestBed::new("perms-gpg-false");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
-    let r = tb.radm(&["config", "yadm.gpg-perms", "false"]);
+    let r = tb.ryadm(&["config", "yadm.gpg-perms", "false"]);
     assert!(r.success());
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -240,14 +240,14 @@ fn gpg_perms_false_leaves_gnupg_untouched_but_still_secures_ssh() {
 #[test]
 fn both_ssh_and_gpg_perms_false_leaves_both_untouched() {
     let tb = TestBed::new("perms-both-false");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
-    assert!(tb.radm(&["config", "yadm.ssh-perms", "false"]).success());
-    assert!(tb.radm(&["config", "yadm.gpg-perms", "false"]).success());
+    assert!(tb.ryadm(&["config", "yadm.ssh-perms", "false"]).success());
+    assert!(tb.ryadm(&["config", "yadm.gpg-perms", "false"]).success());
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -271,14 +271,14 @@ fn both_ssh_and_gpg_perms_false_leaves_both_untouched() {
 #[test]
 fn ssh_perms_true_and_gpg_perms_true_both_secure() {
     let tb = TestBed::new("perms-both-true");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
-    assert!(tb.radm(&["config", "yadm.ssh-perms", "true"]).success());
-    assert!(tb.radm(&["config", "yadm.gpg-perms", "true"]).success());
+    assert!(tb.ryadm(&["config", "yadm.ssh-perms", "true"]).success());
+    assert!(tb.ryadm(&["config", "yadm.gpg-perms", "true"]).success());
 
-    let r = tb.radm(&["perms"]);
+    let r = tb.ryadm(&["perms"]);
     assert!(r.success());
 
     for p in [
@@ -300,7 +300,7 @@ fn ssh_perms_true_and_gpg_perms_true_both_secure() {
 #[test]
 fn gnupghome_env_relocates_gnupg_perms_target() {
     let tb = TestBed::new("perms-gnupghome-env");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     // Files under the default .gnupg must NOT be touched...
@@ -310,7 +310,7 @@ fn gnupghome_env_relocates_gnupg_perms_target() {
     tb.write_home_mode("alt/gnupghome/.p4", "p4\n", 0o644);
 
     let gnupghome_abs = tb.home_path("alt/gnupghome");
-    let r = tb.radm_env(&["perms"], "GNUPGHOME", &gnupghome_abs.to_string_lossy());
+    let r = tb.ryadm_env(&["perms"], "GNUPGHOME", &gnupghome_abs.to_string_lossy());
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -329,7 +329,7 @@ fn gnupghome_env_outside_worktree_still_secures_absolute_target() {
     // back to an absolute/`../`-laden path, but perms() must still resolve
     // and chmod the real target.
     let tb = TestBed::new("perms-gnupghome-outside");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     let outside_dir = tb.root.join("outside-gnupg");
@@ -343,7 +343,7 @@ fn gnupghome_env_outside_worktree_still_secures_absolute_target() {
     )
     .unwrap();
 
-    let r = tb.radm_env(&["perms"], "GNUPGHOME", &outside_dir.to_string_lossy());
+    let r = tb.ryadm_env(&["perms"], "GNUPGHOME", &outside_dir.to_string_lossy());
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -368,7 +368,7 @@ fn gnupghome_env_outside_worktree_still_secures_absolute_target() {
 #[test]
 fn auto_perms_runs_after_status_and_secures_private_paths() {
     let tb = TestBed::new("auto-perms-status");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
@@ -383,7 +383,7 @@ fn auto_perms_runs_after_status_and_secures_private_paths() {
         assert!(!secured(tb.mode(p)));
     }
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
 
@@ -405,11 +405,11 @@ fn auto_perms_runs_after_status_and_secures_private_paths() {
 #[test]
 fn auto_perms_disabled_via_config_leaves_private_paths_untouched() {
     let tb = TestBed::new("auto-perms-disabled");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
-    let r = tb.radm(&["config", "yadm.auto-perms", "false"]);
+    let r = tb.ryadm(&["config", "yadm.auto-perms", "false"]);
     assert!(r.success());
 
     for p in [
@@ -423,7 +423,7 @@ fn auto_perms_disabled_via_config_leaves_private_paths_untouched() {
         assert!(!secured(tb.mode(p)));
     }
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
 
@@ -445,14 +445,14 @@ fn auto_perms_disabled_via_config_leaves_private_paths_untouched() {
 #[test]
 fn auto_perms_true_explicit_behaves_like_default() {
     let tb = TestBed::new("auto-perms-true");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     seed_private_files(&tb);
 
-    let r = tb.radm(&["config", "yadm.auto-perms", "true"]);
+    let r = tb.ryadm(&["config", "yadm.auto-perms", "true"]);
     assert!(r.success());
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
 
@@ -475,13 +475,13 @@ fn auto_perms_true_explicit_behaves_like_default() {
 #[test]
 fn auto_private_dirs_created_0700_by_git_passthrough_when_missing() {
     let tb = TestBed::new("auto-pdirs-create");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     assert!(!tb.exists(".ssh"));
     assert!(!tb.exists(".gnupg"));
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert!(r.stdout.contains("On branch master"));
@@ -495,16 +495,16 @@ fn auto_private_dirs_created_0700_by_git_passthrough_when_missing() {
 #[test]
 fn auto_private_dirs_disabled_via_config_leaves_dirs_absent() {
     let tb = TestBed::new("auto-pdirs-disabled");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
-    let r = tb.radm(&["config", "yadm.auto-private-dirs", "false"]);
+    let r = tb.ryadm(&["config", "yadm.auto-private-dirs", "false"]);
     assert!(r.success());
 
     assert!(!tb.exists(".ssh"));
     assert!(!tb.exists(".gnupg"));
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert!(r.stdout.contains("On branch master"));
@@ -527,10 +527,10 @@ fn auto_private_dirs_not_created_when_worktree_differs_from_home() {
     let altwork = tb.root.join("altwork");
     std::fs::create_dir_all(&altwork).unwrap();
 
-    let r = tb.radm(&["init", "-w", &altwork.to_string_lossy()]);
+    let r = tb.ryadm(&["init", "-w", &altwork.to_string_lossy()]);
     assert!(r.success());
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
 
@@ -546,7 +546,7 @@ fn auto_private_dirs_leaves_existing_dirs_and_their_modes_alone() {
     // If the directories already exist, assert_private_dirs is a no-op:
     // no mkdir call, existing permissions untouched.
     let tb = TestBed::new("auto-pdirs-existing-untouched");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     std::fs::create_dir_all(tb.home_path(".ssh")).unwrap();
@@ -564,10 +564,10 @@ fn auto_private_dirs_leaves_existing_dirs_and_their_modes_alone() {
 
     // Disable auto-perms so the go-rwx chmod doesn't also run and mask the
     // "existing dirs untouched by assert_private_dirs" assertion.
-    let r = tb.radm(&["config", "yadm.auto-perms", "false"]);
+    let r = tb.ryadm(&["config", "yadm.auto-perms", "false"]);
     assert!(r.success());
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert!(r.stdout.contains("On branch master"));
@@ -589,13 +589,13 @@ fn auto_private_dirs_creates_nested_gnupghome_via_env() {
     // GNUPGHOME set to a nested path: assert_private_dirs must create all
     // intermediate parents too, with the leaf at exactly 0700.
     let tb = TestBed::new("auto-pdirs-nested-gnupghome");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     let gnupghome_abs = tb.home_path("alt/nested/gnupghome");
     assert!(!gnupghome_abs.exists());
 
-    let r = tb.radm_env(&["status"], "GNUPGHOME", &gnupghome_abs.to_string_lossy());
+    let r = tb.ryadm_env(&["status"], "GNUPGHOME", &gnupghome_abs.to_string_lossy());
     assert!(r.success());
     assert_eq!(r.stderr, "");
 
@@ -617,10 +617,10 @@ fn private_dirs_default_without_gnupghome_uses_dot_gnupg() {
     // No GNUPGHOME set: perms()/auto-private-dirs both resolve the gnupg
     // slot to the literal ".gnupg" -- verified indirectly via CLI effects.
     let tb = TestBed::new("privdirs-default-gnupg");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
 
     assert!(tb.exists(".gnupg"));
@@ -632,11 +632,11 @@ fn private_dirs_with_gnupghome_relative_subpath_of_work() {
     // GNUPGHOME under YADM_WORK: private_dirs' "gnupg" slot becomes the
     // subpath relative to YADM_WORK (e.g. "alt/gnupghome"), not ".gnupg".
     let tb = TestBed::new("privdirs-gnupghome-subpath");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     let gnupghome_abs = tb.home_path("alt/gnupghome");
-    let r = tb.radm_env(&["status"], "GNUPGHOME", &gnupghome_abs.to_string_lossy());
+    let r = tb.ryadm_env(&["status"], "GNUPGHOME", &gnupghome_abs.to_string_lossy());
     assert!(r.success());
 
     assert!(
@@ -651,7 +651,7 @@ fn private_dirs_with_gnupghome_relative_subpath_of_work() {
 
 // ---------------------------------------------------------------------------
 // get_mode / copy_perms -- exercised via template rendering, which is the
-//    one real call site of copy_perms in radm (yadm:355 template()).
+//    one real call site of copy_perms in ryadm (yadm:355 template()).
 // ---------------------------------------------------------------------------
 
 #[test]
@@ -663,14 +663,14 @@ fn copy_perms_preserves_source_mode_on_rendered_template_output() {
     // files (git ls-files), so the template source must be added and
     // committed first.
     let tb = TestBed::new("copy-perms-template");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     tb.write_home_mode(".bashrc##template", "#compat-marker\n", 0o640);
-    assert!(tb.radm(&["add", ".bashrc##template"]).success());
-    assert!(tb.radm(&["commit", "-m", "add template"]).success());
+    assert!(tb.ryadm(&["add", ".bashrc##template"]).success());
+    assert!(tb.ryadm(&["commit", "-m", "add template"]).success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
     assert_eq!(r.stderr, "");
 
@@ -695,14 +695,14 @@ fn copy_perms_reapplies_source_mode_after_output_mode_drifts() {
     // copy_perms must re-copy the (new) source mode onto the output each
     // time template() runs, regardless of the output's prior mode.
     let tb = TestBed::new("copy-perms-template-redrift");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     tb.write_home_mode(".bashrc##template", "#v1\n", 0o644);
-    assert!(tb.radm(&["add", ".bashrc##template"]).success());
-    assert!(tb.radm(&["commit", "-m", "add template"]).success());
+    assert!(tb.ryadm(&["add", ".bashrc##template"]).success());
+    assert!(tb.ryadm(&["commit", "-m", "add template"]).success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success());
     assert_eq!(tb.mode(".bashrc"), 0o644);
 
@@ -715,7 +715,7 @@ fn copy_perms_reapplies_source_mode_after_output_mode_drifts() {
     .unwrap();
     tb.write_home_mode(".bashrc##template", "#v2\n", 0o755);
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success());
     assert_eq!(
         tb.mode(".bashrc"),

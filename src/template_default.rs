@@ -480,7 +480,7 @@ mod tests {
     fn write_temp(name_hint: &str, content: &str) -> String {
         let n = COUNTER.fetch_add(1, Ordering::SeqCst);
         let dir = std::env::temp_dir().join(format!(
-            "radm-template-default-test-{}-{}-{}",
+            "ryadm-template-default-test-{}-{}-{}",
             std::process::id(),
             n,
             name_hint
@@ -769,7 +769,7 @@ end of template\n\
         let n = COUNTER.fetch_add(1, Ordering::SeqCst);
         let dir = std::env::temp_dir()
             .join(format!(
-                "radm-template-default-test-{}-{}-include",
+                "ryadm-template-default-test-{}-{}-include",
                 std::process::id(),
                 n
             ))
@@ -918,7 +918,7 @@ basic\n"
         let ctx = Context::new();
         let values = base_values();
         let missing = std::env::temp_dir()
-            .join("radm-template-default-does-not-exist-at-all")
+            .join("ryadm-template-default-does-not-exist-at-all")
             .to_string_lossy()
             .into_owned();
         assert!(template_default(&ctx, &missing, &values).is_err());
@@ -928,7 +928,7 @@ basic\n"
     fn test_could_not_read_include_file() {
         let dir = std::env::temp_dir()
             .join(format!(
-                "radm-template-default-test-{}-missing-include",
+                "ryadm-template-default-test-{}-missing-include",
                 std::process::id()
             ))
             .to_string_lossy()
@@ -944,7 +944,7 @@ basic\n"
     fn test_include_empty_file_leaves_no_blank_line() {
         let dir = std::env::temp_dir()
             .join(format!(
-                "radm-template-default-test-{}-include-empty",
+                "ryadm-template-default-test-{}-include-empty",
                 std::process::id()
             ))
             .to_string_lossy()

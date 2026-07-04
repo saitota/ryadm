@@ -11,7 +11,7 @@ use crate::util;
 
 /// Build a git command (GIT_DIR is inherited from the process environment).
 ///
-/// radm deliberately uses process-global state to mirror bash/yadm byte-for-
+/// ryadm deliberately uses process-global state to mirror bash/yadm byte-for-
 /// byte: `GIT_DIR` (set in `paths::configure_paths`, swapped in `cmd/upgrade`,
 /// cleared in `cmd/misc::bootstrap`) and the process CWD (via `paths::cd_work`)
 /// steer every git child and much of alt/encrypt/perms/list. The dependency is

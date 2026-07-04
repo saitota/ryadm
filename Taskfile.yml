@@ -2,9 +2,9 @@ version: '3'
 
 vars:
   # Last commit that contains the original bash yadm; the differential
-  # compatibility tests run radm side-by-side against this exact script.
+  # compatibility tests run ryadm side-by-side against this exact script.
   YADM_REF: bbb58e6
-  REPO: saitota/radm
+  REPO: saitota/ryadm
 
 tasks:
   default:
@@ -49,7 +49,7 @@ tasks:
       - mkdir -p .cache
       - git cat-file blob {{.YADM_REF}}:yadm > .cache/yadm-ref
       - chmod +x .cache/yadm-ref
-      - RADM_COMPAT_YADM="$PWD/.cache/yadm-ref" cargo test --test compat_yadm -- --nocapture
+      - RYADM_COMPAT_YADM="$PWD/.cache/yadm-ref" cargo test --test compat_yadm -- --nocapture
 
   ci:
     desc: Everything the CI runs
@@ -61,7 +61,7 @@ tasks:
       - task: test:compat
 
   install:
-    desc: Install radm to the cargo bin directory
+    desc: Install ryadm to the cargo bin directory
     cmds:
       - cargo install --path . --locked
 
@@ -83,10 +83,10 @@ tasks:
       VERSION:
         sh: echo '{{.TAG}}' | sed 's/^v//'
     cmds:
-      - RADM_VERSION={{.TAG}} cargo build --release
-      - '[ "$(./target/release/radm version | head -1)" = "radm version {{.VERSION}}" ]'
+      - RYADM_VERSION={{.TAG}} cargo build --release
+      - '[ "$(./target/release/ryadm version | head -1)" = "ryadm version {{.VERSION}}" ]'
       - mkdir -p dist
-      - tar -czf dist/radm-{{.VERSION}}-aarch64-apple-darwin.tar.gz -C target/release radm
-      - shasum -a 256 dist/radm-{{.VERSION}}-aarch64-apple-darwin.tar.gz > dist/radm-{{.VERSION}}-aarch64-apple-darwin.tar.gz.sha256
-      - gh release create {{.TAG}} dist/radm-{{.VERSION}}-aarch64-apple-darwin.tar.gz dist/radm-{{.VERSION}}-aarch64-apple-darwin.tar.gz.sha256 --repo {{.REPO}} --title "radm {{.TAG}}" --target $(git rev-parse HEAD) --generate-notes
+      - tar -czf dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz -C target/release ryadm
+      - shasum -a 256 dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz > dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz.sha256
+      - gh release create {{.TAG}} dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz.sha256 --repo {{.REPO}} --title "ryadm {{.TAG}}" --target $(git rev-parse HEAD) --generate-notes
       - git fetch origin tag {{.TAG}}

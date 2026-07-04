@@ -493,7 +493,7 @@ mod tests {
     fn tmp_dir(name: &str) -> String {
         let n = COUNTER.fetch_add(1, Ordering::SeqCst);
         let dir = std::env::temp_dir().join(format!(
-            "radm-encrypt-test-{}-{}-{}",
+            "ryadm-encrypt-test-{}-{}-{}",
             std::process::id(),
             name,
             n

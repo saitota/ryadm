@@ -13,7 +13,7 @@ use common::*;
 #[test]
 fn config_read_missing_key_is_silent_success() {
     let tb = TestBed::new("cfg-read-missing");
-    let r = tb.radm(&["config", "test.attribute"]);
+    let r = tb.ryadm(&["config", "test.attribute"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -22,7 +22,7 @@ fn config_read_missing_key_is_silent_success() {
 #[test]
 fn config_write_creates_yadm_config_file() {
     let tb = TestBed::new("cfg-write");
-    let r = tb.radm(&["config", "test.attribute", "testvalue"]);
+    let r = tb.ryadm(&["config", "test.attribute", "testvalue"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -34,7 +34,7 @@ fn config_write_creates_yadm_config_file() {
 fn config_read_roundtrip() {
     let tb = TestBed::new("cfg-read");
     tb.write_home(".config/yadm/config", "[test]\n\tattribute = testvalue\n");
-    let r = tb.radm(&["config", "test.attribute"]);
+    let r = tb.ryadm(&["config", "test.attribute"]);
     assert!(r.success());
     assert_eq!(r.stdout.trim_end_matches('\n'), "testvalue");
     assert_eq!(r.stderr, "");
@@ -44,7 +44,7 @@ fn config_read_roundtrip() {
 fn config_update_overwrites_single_valued_key() {
     let tb = TestBed::new("cfg-update");
     tb.write_home(".config/yadm/config", "[test]\n\tattribute = testvalue\n");
-    let r = tb.radm(&["config", "test.attribute", "testvalueextra"]);
+    let r = tb.ryadm(&["config", "test.attribute", "testvalueextra"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -75,7 +75,7 @@ fn config_local_star_keys_read_from_repo_config() {
         ));
         assert!(r.success(), "seeding {key} failed: {r:?}");
 
-        let r = tb.radm(&["config", key]);
+        let r = tb.ryadm(&["config", key]);
         assert!(r.success(), "config {key} failed: {r:?}");
         assert_eq!(r.stderr, "");
         assert_eq!(r.stdout, format!("{value}\n"));
@@ -89,7 +89,7 @@ fn config_local_star_keys_write_to_repo_config_not_yadm_config() {
     let repo = tb.repo();
     for key in LOCAL_CONFIGS {
         let value = format!("value_of_{key}");
-        let r = tb.radm(&["config", key, &value]);
+        let r = tb.ryadm(&["config", key, &value]);
         assert!(r.success(), "config write {key} failed: {r:?}");
         assert_eq!(r.stdout, "");
         assert_eq!(r.stderr, "");
@@ -112,7 +112,7 @@ fn config_without_parent_directory_creates_nested_dirs() {
     let cfg_path = tb.home.join("folder/does/not/exist/config");
     let cfg_arg = cfg_path.to_string_lossy().into_owned();
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "--yadm-config",
         &cfg_arg,
         "config",
@@ -124,7 +124,7 @@ fn config_without_parent_directory_creates_nested_dirs() {
     assert_eq!(r.stderr, "");
     assert!(cfg_path.is_file(), "nested config file was not created");
 
-    let r = tb.radm(&["--yadm-config", &cfg_arg, "config", "test.attribute"]);
+    let r = tb.ryadm(&["--yadm-config", &cfg_arg, "config", "test.attribute"]);
     assert!(r.success());
     assert_eq!(r.stdout, "testvalue\n");
     assert_eq!(r.stderr, "");
@@ -133,9 +133,9 @@ fn config_without_parent_directory_creates_nested_dirs() {
 #[test]
 fn config_dash_l_lists_yadm_config_contents() {
     let tb = TestBed::new("cfg-list");
-    let r = tb.radm(&["config", "yadm.auto-perms", "false"]);
+    let r = tb.ryadm(&["config", "yadm.auto-perms", "false"]);
     assert!(r.success());
-    let r = tb.radm(&["config", "-l"]);
+    let r = tb.ryadm(&["config", "-l"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert!(r.out_contains("yadm.auto-perms=false"));
@@ -149,7 +149,7 @@ fn config_dash_l_lists_yadm_config_contents() {
 #[test]
 fn introspect_commands_lists_known_commands() {
     let tb = TestBed::new("introspect-commands");
-    let r = tb.radm(&["introspect", "commands"]);
+    let r = tb.ryadm(&["introspect", "commands"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let cmds: Vec<&str> = r.stdout.lines().collect();
@@ -168,7 +168,7 @@ fn introspect_commands_lists_known_commands() {
 #[test]
 fn introspect_configs_lists_known_configs() {
     let tb = TestBed::new("introspect-configs");
-    let r = tb.radm(&["introspect", "configs"]);
+    let r = tb.ryadm(&["introspect", "configs"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let configs: Vec<&str> = r.stdout.lines().collect();
@@ -180,7 +180,7 @@ fn introspect_configs_lists_known_configs() {
 #[test]
 fn introspect_switches_lists_global_switches() {
     let tb = TestBed::new("introspect-switches");
-    let r = tb.radm(&["introspect", "switches"]);
+    let r = tb.ryadm(&["introspect", "switches"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let switches: Vec<&str> = r.stdout.lines().collect();
@@ -193,7 +193,7 @@ fn introspect_switches_lists_global_switches() {
 fn introspect_repo_prints_repo_path_with_trailing_newline() {
     let tb = TestBed::new("introspect-repo");
     tb.init_repo_with(&[]);
-    let r = tb.radm(&["introspect", "repo"]);
+    let r = tb.ryadm(&["introspect", "repo"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert!(r.stdout.ends_with('\n'));
@@ -207,12 +207,12 @@ fn introspect_repo_prints_repo_path_with_trailing_newline() {
 fn introspect_unknown_or_no_arg_prints_nothing_exit_0() {
     let tb = TestBed::new("introspect-unknown");
 
-    let r = tb.radm(&["introspect"]);
+    let r = tb.ryadm(&["introspect"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
 
-    let r = tb.radm(&["introspect", "invalid"]);
+    let r = tb.ryadm(&["introspect", "invalid"]);
     assert!(r.success());
     assert_eq!(r.stdout, "");
     assert_eq!(r.stderr, "");
@@ -225,7 +225,7 @@ fn introspect_unknown_or_no_arg_prints_nothing_exit_0() {
 #[test]
 fn help_command_exit_1_stderr_empty() {
     let tb = TestBed::new("help-cmd");
-    let r = tb.radm(&["help"]);
+    let r = tb.ryadm(&["help"]);
     assert!(!r.success());
     assert_eq!(r.code, 1);
     assert_eq!(r.stderr, "");
@@ -235,8 +235,8 @@ fn help_command_exit_1_stderr_empty() {
 #[test]
 fn help_via_double_dash_help_same_as_help() {
     let tb = TestBed::new("help-dashdash");
-    let expected = tb.radm(&["help"]).stdout;
-    let r = tb.radm(&["--help"]);
+    let expected = tb.ryadm(&["help"]).stdout;
+    let r = tb.ryadm(&["--help"]);
     assert!(!r.success());
     assert_eq!(r.code, 1);
     assert_eq!(r.stderr, "");
@@ -246,8 +246,8 @@ fn help_via_double_dash_help_same_as_help() {
 #[test]
 fn no_args_behaves_like_help() {
     let tb = TestBed::new("no-args-help");
-    let expected = tb.radm(&["help"]).stdout;
-    let r = tb.radm(&[]);
+    let expected = tb.ryadm(&["help"]).stdout;
+    let r = tb.ryadm(&[]);
     assert!(!r.success());
     assert_eq!(r.code, 1);
     assert_eq!(r.stderr, "");
@@ -261,12 +261,12 @@ fn no_args_behaves_like_help() {
 #[test]
 fn version_command_shape_and_exit_0() {
     let tb = TestBed::new("version-cmd");
-    let r = tb.radm(&["version"]);
+    let r = tb.ryadm(&["version"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let mut lines = r.stdout.lines();
     let first = lines.next().unwrap_or_default();
-    assert!(first.starts_with("radm version "));
+    assert!(first.starts_with("ryadm version "));
     // second line: single leading space, then "git version ..."
     let rest = &r.stdout[first.len() + 1..]; // skip first line + its \n
     assert!(
@@ -280,10 +280,10 @@ fn version_command_shape_and_exit_0() {
 #[test]
 fn version_via_double_dash_version_same_shape() {
     let tb = TestBed::new("version-dashdash");
-    let r = tb.radm(&["--version"]);
+    let r = tb.ryadm(&["--version"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
-    assert!(r.stdout.starts_with("radm version "));
+    assert!(r.stdout.starts_with("ryadm version "));
     assert!(r.out_contains("git version"));
     assert!(r.stdout.contains("\nyadm version "));
 }
@@ -296,7 +296,7 @@ fn version_via_double_dash_version_same_shape() {
 fn enter_with_command_exposes_git_work_tree() {
     let tb = TestBed::new("enter-cmd");
     tb.init_repo_with(&[]);
-    let r = tb.radm(&["enter", "printenv", "GIT_WORK_TREE"]);
+    let r = tb.ryadm(&["enter", "printenv", "GIT_WORK_TREE"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert_eq!(r.stdout.trim_end_matches('\n'), tb.home.to_string_lossy());
@@ -312,7 +312,7 @@ fn enter_without_command_prints_entering_and_leaving() {
     // TestBed sets SHELL=/bin/bash and detaches the tty, so an interactive
     // bash started with --norc exits immediately (no stdin) after printing
     // the banners.
-    let r = tb.radm(&["enter"]);
+    let r = tb.ryadm(&["enter"]);
     assert!(r.stdout.starts_with("Entering yadm repo\n"));
     assert!(r.stdout.trim_end().ends_with("Leaving yadm repo"));
     assert_eq!(r.stderr, "");
@@ -322,7 +322,7 @@ fn enter_without_command_prints_entering_and_leaving() {
 fn enter_bad_shell_errors_does_not_refer_to_executable() {
     let tb = TestBed::new("enter-badshell");
     tb.init_repo_with(&[]);
-    let r = tb.radm_env(&["enter"], "SHELL", "/nonexistent-shell-xyz");
+    let r = tb.ryadm_env(&["enter"], "SHELL", "/nonexistent-shell-xyz");
     assert!(!r.success());
     assert!(r.err_contains("does not refer to an executable"));
     assert!(r.err_contains("$SHELL does not refer to an executable."));
@@ -332,7 +332,7 @@ fn enter_bad_shell_errors_does_not_refer_to_executable() {
 fn enter_empty_shell_env_var_errors() {
     let tb = TestBed::new("enter-emptyshell");
     tb.init_repo_with(&[]);
-    let r = tb.radm_env(&["enter"], "SHELL", "");
+    let r = tb.ryadm_env(&["enter"], "SHELL", "");
     assert!(!r.success());
     assert!(r.err_contains("does not refer to an executable"));
 }
@@ -343,7 +343,7 @@ fn enter_non_executable_shell_file_errors() {
     tb.init_repo_with(&[]);
     tb.write_home_mode("noexec-shell", "", 0o664);
     let noexec = tb.home_path("noexec-shell");
-    let r = tb.radm_env(&["enter"], "SHELL", &noexec.to_string_lossy());
+    let r = tb.ryadm_env(&["enter"], "SHELL", &noexec.to_string_lossy());
     assert!(!r.success());
     assert!(r.err_contains("does not refer to an executable"));
 }
@@ -352,7 +352,7 @@ fn enter_non_executable_shell_file_errors() {
 fn enter_env_shell_dumps_git_and_prompt_vars() {
     let tb = TestBed::new("enter-env");
     tb.init_repo_with(&[]);
-    let r = tb.radm_env(&["enter"], "SHELL", "/usr/bin/env");
+    let r = tb.ryadm_env(&["enter"], "SHELL", "/usr/bin/env");
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let repo = tb.repo().to_string_lossy().into_owned();
@@ -418,7 +418,7 @@ fn enter_shell_ops_no_command_all_shells_all_terms() {
                 opts.push_str(" --no-zle");
             }
 
-            let mut c = std::process::Command::new(TestBed::radm_bin());
+            let mut c = std::process::Command::new(TestBed::ryadm_bin());
             tb.apply_env(&mut c);
             c.env("SHELL", &shell_path);
             c.env("TERM", term);
@@ -473,7 +473,7 @@ fn enter_shell_ops_with_command_suppresses_banners_and_propagates_exit() {
                     opts.push_str(" --no-zle");
                 }
 
-                let mut c = std::process::Command::new(TestBed::radm_bin());
+                let mut c = std::process::Command::new(TestBed::ryadm_bin());
                 tb.apply_env(&mut c);
                 c.env("SHELL", &shell_path);
                 c.env("TERM", term);
@@ -511,7 +511,7 @@ fn ds1_files() -> Vec<(&'static str, &'static str)> {
 fn list_dash_a_lists_all_tracked_files_worktree_relative() {
     let tb = TestBed::new("list-all");
     tb.init_repo_with(&ds1_files());
-    let r = tb.radm(&["list", "-a"]);
+    let r = tb.ryadm(&["list", "-a"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let mut got: Vec<&str> = r.stdout.lines().collect();
@@ -523,7 +523,7 @@ fn list_dash_a_lists_all_tracked_files_worktree_relative() {
 fn list_no_flag_from_work_dir_lists_all_tracked_files() {
     let tb = TestBed::new("list-work");
     tb.init_repo_with(&ds1_files());
-    let r = tb.radm_in(&tb.home, &["list"]);
+    let r = tb.ryadm_in(&tb.home, &["list"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let mut got: Vec<&str> = r.stdout.lines().collect();
@@ -536,7 +536,7 @@ fn list_no_flag_outside_work_dir_still_lists_all_tracked_files() {
     let tb = TestBed::new("list-outside");
     tb.init_repo_with(&ds1_files());
     let outside = tb.home.parent().unwrap().to_path_buf();
-    let r = tb.radm_in(&outside, &["list"]);
+    let r = tb.ryadm_in(&outside, &["list"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let mut got: Vec<&str> = r.stdout.lines().collect();
@@ -549,7 +549,7 @@ fn list_no_flag_from_subdir_lists_only_files_under_subdir_relative() {
     let tb = TestBed::new("list-subdir");
     tb.init_repo_with(&ds1_files());
     let subdir = tb.home_path("d1");
-    let r = tb.radm_in(&subdir, &["list"]);
+    let r = tb.ryadm_in(&subdir, &["list"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     let got: Vec<&str> = r.stdout.lines().collect();
@@ -573,14 +573,14 @@ fn git_program_override_wrapper_is_used_and_logs() {
     tb.write_home_mode("bin/git-wrapper.sh", &wrapper_script, 0o755);
     let wrapper_path = tb.home_path("bin/git-wrapper.sh");
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "config",
         "yadm.git-program",
         &wrapper_path.to_string_lossy(),
     ]);
     assert!(r.success());
 
-    let r = tb.radm(&["list"]);
+    let r = tb.ryadm(&["list"]);
     assert!(r.success(), "list via wrapper failed: {r:?}");
     assert_eq!(r.stderr, "");
     let mut got: Vec<&str> = r.stdout.lines().collect();
@@ -607,14 +607,14 @@ fn git_program_override_used_by_version_command_too() {
     tb.write_home_mode("bin/git-wrapper2.sh", &wrapper_script, 0o755);
     let wrapper_path = tb.home_path("bin/git-wrapper2.sh");
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "config",
         "yadm.git-program",
         &wrapper_path.to_string_lossy(),
     ]);
     assert!(r.success());
 
-    let r = tb.radm(&["version"]);
+    let r = tb.ryadm(&["version"]);
     assert!(r.success());
     assert!(r.out_contains("git version"));
 

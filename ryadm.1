@@ -1,37 +1,37 @@
 .\" vim: set spell so=8:
-.TH RADM 1 "July 4, 2026" "1.0.0"
+.TH RYADM 1 "July 4, 2026" "1.0.0"
 
 .SH NAME
 
-radm \- Rust (Yet) Another Dotfiles Manager
+ryadm \- Rust (Yet) Another Dotfiles Manager
 
 .SH COMPATIBILITY
 
-radm is a byte-compatible Rust implementation of yadm 3.5.0. It uses the same
+ryadm is a byte-compatible Rust implementation of yadm 3.5.0. It uses the same
 commands, options, exit codes, configuration keys, paths, environment
 variables, and template syntax as yadm, and produces identical output
 (including references to "yadm" in messages, which are preserved
 intentionally so existing scripts and tooling keep working). An existing
-yadm-managed dotfiles setup works with radm unchanged.
+yadm-managed dotfiles setup works with ryadm unchanged.
 For the original project, background, and complete web documentation, see
 https://yadm.io/ and https://github.com/yadm-dev/yadm.
 
 .SH SYNOPSIS
 
-.B radm
+.B ryadm
 .I command
 .RI [ options ]
 
-.B radm
+.B ryadm
 .I git-command-or-alias
 .RI [ options ]
 
-.B radm init
+.B ryadm init
 .RB [ \-f ]
 .RB [ \-w
 .IR dir ]
 
-.B radm clone
+.B ryadm clone
 .I url
 .RB [ \-f ]
 .RB [ \-w
@@ -41,49 +41,49 @@ https://yadm.io/ and https://github.com/yadm-dev/yadm.
 .RB [ \-\-bootstrap ]
 .RB [ \-\-no\-bootstrap ]
 
-.B radm config
+.B ryadm config
 .I name
 .RI [ value ]
 
-.B radm config
+.B ryadm config
 .RB [ \-e ]
 
-.B radm list
+.B ryadm list
 .RB [ \-a ]
 
-.B radm bootstrap
+.B ryadm bootstrap
 
-.B radm encrypt
+.B ryadm encrypt
 
-.B radm decrypt
+.B ryadm decrypt
 .RB [ \-l ]
 
-.B radm alt
+.B ryadm alt
 
-.B radm perms
+.B ryadm perms
 
-.B radm enter
+.B ryadm enter
 .RI [ command ]
 
-.B radm git\-crypt
+.B ryadm git\-crypt
 .RI [ options ]
 
-.B radm transcrypt
+.B ryadm transcrypt
 .RI [ options ]
 
-.B radm upgrade
+.B ryadm upgrade
 .RB [ \-f ]
 
-.B radm introspect
+.B ryadm introspect
 .I category
 
 .SH DESCRIPTION
 
-radm is a tool for managing a collection of files across multiple computers,
+ryadm is a tool for managing a collection of files across multiple computers,
 using a shared Git repository.
-In addition, radm provides a feature to select alternate versions of files for
+In addition, ryadm provides a feature to select alternate versions of files for
 particular systems.
-Lastly, radm supplies the ability to manage a subset of secure files, which are
+Lastly, ryadm supplies the ability to manage a subset of secure files, which are
 encrypted before they are included in the repository.
 
 .SH COMMANDS
@@ -225,7 +225,7 @@ directories), you can remove this configuration.
 
 .RS
 .RS
-radm gitconfig --unset status.showUntrackedFiles
+ryadm gitconfig --unset status.showUntrackedFiles
 .RE
 .RE
 .TP
@@ -281,7 +281,7 @@ for details.
 Version 3 of yadm uses a different directory for storing data.
 When you start to use version 3 for the first time, you may see warnings about
 moving your data to this new directory.
-The easiest way to accomplish this is by running "radm upgrade".
+The easiest way to accomplish this is by running "ryadm upgrade".
 This command will start by moving your yadm repo to the new path.
 Next it will move any archive data.
 If the archive is tracked within your yadm repo, this command will
@@ -295,7 +295,7 @@ submodules, you can use the
 .B \-f
 option with the "upgrade" command to force the de-initialization.
 
-After running "radm upgrade", you should run "radm status" to review changes
+After running "ryadm upgrade", you should run "ryadm status" to review changes
 which have been staged, and commit them to your repository.
 
 You can read
@@ -303,19 +303,19 @@ https://yadm.io/docs/upgrade_from_2
 for more information.
 .TP
 .B version
-Print the version of radm.
+Print the version of ryadm.
 
 .SH OPTIONS
 
-radm supports a set of universal options that alter the paths it uses. The
+ryadm supports a set of universal options that alter the paths it uses. The
 default paths are documented in the FILES section. Any path specified by these
 options must be fully qualified. If you always want to override one or more of
-these paths, it may be useful to create an alias for the radm command.
+these paths, it may be useful to create an alias for the ryadm command.
 For example, the following alias could be used to override the repository
 directory.
 
 .RS
-alias radm='radm \-\-yadm\-repo /alternate/path/to/repo'
+alias ryadm='ryadm \-\-yadm\-repo /alternate/path/to/repo'
 .RE
 
 The following is the full list of universal options.
@@ -352,13 +352,13 @@ This file uses the same format as
 .BR git-config (1).
 Also, you can control the contents of the configuration file
 via the
-.B radm config
+.B ryadm config
 command (which works exactly like
 .BR git-config ).
 For example, to disable alternates you can run the command:
 
 .RS
-radm config yadm.auto-alt false
+ryadm config yadm.auto-alt false
 .RE
 
 The following is the full list of supported configurations:
@@ -370,7 +370,7 @@ symlinks.
 .TP
 .B yadm.auto-alt
 Disable the automatic linking described in the section ALTERNATES. If disabled,
-you may still run "radm alt" manually to create the alternate links. This
+you may still run "ryadm alt" manually to create the alternate links. This
 feature is enabled by default.
 .TP
 .B yadm.auto-exclude
@@ -382,7 +382,7 @@ This feature is enabled by default.
 .B yadm.auto-perms
 Disable the automatic permission changes described in the section PERMISSIONS.
 If disabled, you may still run
-.B radm perms
+.B ryadm perms
 manually to update permissions.
 This feature is enabled by default.
 .TP
@@ -449,7 +449,7 @@ By default, no class will be matched.
 The local host can be assigned multiple classes using command:
 
 .RS
-radm config \-\-add local.class <additional-class>
+ryadm config \-\-add local.class <additional-class>
 .RE
 .TP
 .B local.arch
@@ -523,7 +523,7 @@ Valid if the value matches the
 .B local.class
 configuration.
 Class must be manually set using
-.BR "radm config local.class <class>" .
+.BR "ryadm config local.class <class>" .
 See the CONFIGURATION section for more details about setting
 .BR local.class .
 .TP
@@ -647,7 +647,7 @@ using the
 .I yadm.auto-alt
 configuration.
 Even if disabled, links can be manually created by running
-.BR "radm alt" .
+.BR "ryadm alt" .
 
 Created links are automatically added to the repository's
 .I info/exclude
@@ -660,10 +660,10 @@ repository). To use alternate symlinks using class, you must set the value of
 class using the configuration
 .BR local.class .
 This is set like any other yadm configuration with the
-.B radm config
+.B ryadm config
 command. The following sets the class to be "Work".
 
-  radm config local.class Work
+  ryadm config local.class Work
 
 Similarly, the values of architecture, os, hostname, user, distro, and
 distro_family can be manually overridden using the configuration options
@@ -699,7 +699,7 @@ ESH is a template processor written in POSIX compliant shell. It allows
 executing shell commands within templates. This can be used to reference your
 own configurations within templates, for example:
 
-  <% radm config mysection.myconfig %>
+  <% ryadm config mysection.myconfig %>
 
 To use the ESH template processor, specify the value of "esh"
 .TP
@@ -832,7 +832,7 @@ not be quoted.  If a directory is specified, its contents will be included.
 Paths beginning with a "!" will be excluded.
 
 The
-.B radm encrypt
+.B ryadm encrypt
 command will find all files matching the patterns, and prompt for a
 password. Once a password has confirmed, the matching files will be encrypted
 and saved as
@@ -841,7 +841,7 @@ The "encrypt" and "archive" files should be added to the yadm repository so
 they are available across multiple systems.
 
 To decrypt these files later, or on another system run
-.B radm decrypt
+.B ryadm decrypt
 and provide the correct password.
 After files are decrypted, permissions are automatically updated as described
 in the PERMISSIONS section.
@@ -860,7 +860,7 @@ Patterns found in
 are automatically added to the repository's
 .I info/exclude
 file every time
-.B radm encrypt
+.B ryadm encrypt
 is run.
 This is to prevent accidentally committing sensitive data to the repository.
 This can be disabled using the
@@ -872,9 +872,9 @@ configuration.
 A completely separate option for encrypting data is to install and use
 transcrypt or git-crypt.
 Once installed, you can use these tools by running
-.B "radm transcrypt"
+.B "ryadm transcrypt"
 or
-.BR "radm git-crypt" .
+.BR "ryadm git-crypt" .
 These tools enables transparent encryption and decryption of files in a git
 repository. See the following web sites for more information:
 
@@ -904,7 +904,7 @@ yadm will automatically update permissions by default. This can be disabled
 using the
 .I yadm.auto-perms
 configuration. Even if disabled, permissions can be manually updated by running
-.BR "radm perms" .
+.BR "ryadm perms" .
 The
 .I .ssh
 directory processing can be disabled using the
@@ -1028,52 +1028,52 @@ List of globs used for encrypt/decrypt
 .TP
 .I $YADM_DATA/archive
 All files encrypted with
-.B radm encrypt
+.B ryadm encrypt
 are stored in this file.
 
 .SH EXAMPLES
 
 .TP
-.B radm init
+.B ryadm init
 Create an empty repo for managing files
 .TP
-.B radm add .bash_profile ; radm commit
+.B ryadm add .bash_profile ; ryadm commit
 Add
 .I .bash_profile
 to the Git index and create a new commit
 .TP
-.B radm remote add origin <url>
+.B ryadm remote add origin <url>
 Add a remote origin to an existing repository
 .TP
-.B radm push \-u origin master
+.B ryadm push \-u origin master
 Initial push of master to origin
 .TP
 .B echo ".ssh/*.key" >> $HOME/.config/yadm/encrypt
 Add a new pattern to the list of encrypted files
 .TP
-.B radm encrypt ; radm add ~/.local/share/yadm/archive ; radm commit
+.B ryadm encrypt ; ryadm add ~/.local/share/yadm/archive ; ryadm commit
 Commit a new set of encrypted files
 
 .SH REPORTING BUGS
 
-radm is a byte-compatible reimplementation of yadm; behavioral questions about
+ryadm is a byte-compatible reimplementation of yadm; behavioral questions about
 the underlying interface are best directed to the yadm project:
 
 https://github.com/yadm-dev/yadm/issues
 
-Issues specific to the radm implementation can be reported at:
+Issues specific to the ryadm implementation can be reported at:
 
-https://github.com/saitota/radm/issues
+https://github.com/saitota/ryadm/issues
 
 .SH AUTHORS
 
-yadm, the interface implemented by radm, was created by:
+yadm, the interface implemented by ryadm, was created by:
 
 Tim Byrne <sultan@locehilios.com>
 
 Erik Flodin <erik@flodin.me>
 
-radm is a derivative work, Copyright (C) 2015-2024 Tim Byrne,
+ryadm is a derivative work, Copyright (C) 2015-2024 Tim Byrne,
 Copyright (C) 2025 Erik Flodin.
 
 .SH SEE ALSO

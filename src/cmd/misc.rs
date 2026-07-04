@@ -5,7 +5,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::config;
-use crate::context::{Context, RADM_VERSION, VERSION};
+use crate::context::{Context, RYADM_VERSION, VERSION};
 use crate::encrypt;
 use crate::git;
 use crate::hooks;
@@ -34,7 +34,7 @@ pub fn bootstrap(ctx: &mut Context) {
     // exec: replace this process, like the script does
     use std::os::unix::process::CommandExt;
     let err = Command::new(&ctx.bootstrap_file).exec();
-    eprintln!("radm: {}: {}", ctx.bootstrap_file, err);
+    eprintln!("ryadm: {}: {}", ctx.bootstrap_file, err);
     std::process::exit(126);
 }
 
@@ -317,7 +317,7 @@ fn parse_class(p: &[char]) -> Option<(ClassFn, &[char])> {
 }
 
 pub fn version(ctx: &Context) -> ! {
-    println!("radm version {RADM_VERSION}");
+    println!("ryadm version {RYADM_VERSION}");
     print!(" ");
     let _ = std::io::stdout().flush();
     let _ = git::cmd(ctx).arg("--version").status();

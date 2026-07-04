@@ -7,7 +7,7 @@ use crate::context::Context;
 use crate::git;
 use crate::util;
 
-/// Bash helper functions yadm `export -f`s to hooks. radm exports them in the
+/// Bash helper functions yadm `export -f`s to hooks. ryadm exports them in the
 /// modern bash env encoding so bash hooks keep working.
 ///
 /// These are hand-ported duplicates of the Rust implementations in `paths.rs`

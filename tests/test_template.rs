@@ -1,5 +1,5 @@
 //! CLI-level compatibility tests for the yadm template engine, as exercised
-//! through `radm alt`. Engine internals (the awk-based `default` processor's
+//! through `ryadm alt`. Engine internals (the awk-based `default` processor's
 //! if/else/include/substitution grammar) are unit-tested in
 //! `src/template_default.rs` and are intentionally NOT re-tested here — this
 //! file only pins the CLI-observable contract: how `##template`/`##seed` alt
@@ -8,16 +8,16 @@
 mod common;
 use common::*;
 
-/// `radm init` plus disabling `yadm.auto-alt`, so that `add`/`commit` in the
+/// `ryadm init` plus disabling `yadm.auto-alt`, so that `add`/`commit` in the
 /// tests below don't implicitly pre-render templates via the automatic
 /// post-command alt pass (yadm runs `alt` automatically after any command
 /// that might have changed tracked files) — every render in this file is
-/// then driven by an explicit `radm alt` call, matching how the ported
+/// then driven by an explicit `ryadm alt` call, matching how the ported
 /// pytest cases invoke `yadm alt` directly.
 fn init_no_auto_alt(tb: &TestBed) {
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success(), "init failed: {r:?}");
-    let r = tb.radm(&["config", "yadm.auto-alt", "false"]);
+    let r = tb.ryadm(&["config", "yadm.auto-alt", "false"]);
     assert!(r.success(), "config failed: {r:?}");
 }
 
@@ -28,16 +28,16 @@ fn init_no_auto_alt(tb: &TestBed) {
 fn template_renders_target_from_local_config_vars() {
     let tb = TestBed::new("tpl-basic");
     init_no_auto_alt(&tb);
-    let r = tb.radm(&["config", "local.user", "testuser123"]);
+    let r = tb.ryadm(&["config", "local.user", "testuser123"]);
     assert!(r.success(), "config failed: {r:?}");
 
     tb.write_home("greeting.txt##template", "hello {{yadm.user}}\n");
-    let r = tb.radm(&["add", "greeting.txt##template"]);
+    let r = tb.ryadm(&["add", "greeting.txt##template"]);
     assert!(r.success(), "add failed: {r:?}");
-    let r = tb.radm(&["commit", "-m", "add template"]);
+    let r = tb.ryadm(&["commit", "-m", "add template"]);
     assert!(r.success(), "commit failed: {r:?}");
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
     assert_eq!(r.stderr, "");
 
@@ -50,19 +50,19 @@ fn template_renders_target_from_local_config_vars() {
 fn template_label_synonyms_all_render() {
     let tb = TestBed::new("tpl-synonyms");
     init_no_auto_alt(&tb);
-    let r = tb.radm(&["config", "local.user", "syn"]);
+    let r = tb.ryadm(&["config", "local.user", "syn"]);
     assert!(r.success());
 
     for (idx, label) in ["t", "template", "yadm"].iter().enumerate() {
         let name = format!("file{idx}.txt##{label}");
         tb.write_home(&name, "value={{yadm.user}}\n");
-        let r = tb.radm(&["add", &name]);
+        let r = tb.ryadm(&["add", &name]);
         assert!(r.success(), "add {name} failed: {r:?}");
     }
-    let r = tb.radm(&["commit", "-m", "add templates"]);
+    let r = tb.ryadm(&["commit", "-m", "add templates"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
     for idx in 0..3 {
         assert_eq!(tb.read_home(&format!("file{idx}.txt")), "value=syn\n");
@@ -76,12 +76,12 @@ fn template_prints_creating_message_when_loud() {
     let tb = TestBed::new("tpl-loud");
     init_no_auto_alt(&tb);
     tb.write_home("out.txt##template", "static content\n");
-    let r = tb.radm(&["add", "out.txt##template"]);
+    let r = tb.ryadm(&["add", "out.txt##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success());
     let source = tb.home_path("out.txt##template");
     let target = tb.home_path("out.txt");
@@ -107,14 +107,14 @@ fn template_overrides_plain_alt_symlink_behavior() {
     let tb = TestBed::new("tpl-override-symlink");
     init_no_auto_alt(&tb);
     tb.write_home("conf##template", "rendered={{yadm.class}}\n");
-    let r = tb.radm(&["add", "conf##template"]);
+    let r = tb.ryadm(&["add", "conf##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
-    let r = tb.radm(&["config", "local.class", "myclass"]);
+    let r = tb.ryadm(&["config", "local.class", "myclass"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
 
     assert!(
@@ -137,13 +137,13 @@ fn seed_renders_once_then_never_overwrites() {
     let tb = TestBed::new("tpl-seed-once");
     init_no_auto_alt(&tb);
     tb.write_home("seedme.txt##seed", "seeded content\n");
-    let r = tb.radm(&["add", "seedme.txt##seed"]);
+    let r = tb.ryadm(&["add", "seedme.txt##seed"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
     // First run: target doesn't exist yet -> renders.
-    let r1 = tb.radm(&["alt"]);
+    let r1 = tb.ryadm(&["alt"]);
     assert!(r1.success(), "first alt failed: {r1:?}");
     assert!(
         r1.stdout.contains("Creating "),
@@ -159,7 +159,7 @@ fn seed_renders_once_then_never_overwrites() {
 
     // Second run: target now exists -> the seed guard skips rendering
     // entirely, producing zero "Creating" lines for this file.
-    let r2 = tb.radm(&["alt"]);
+    let r2 = tb.ryadm(&["alt"]);
     assert!(r2.success(), "second alt failed: {r2:?}");
     assert!(
         !r2.stdout.contains("Creating "),
@@ -180,17 +180,17 @@ fn seed_short_label_behaves_like_seed() {
     let tb = TestBed::new("tpl-seed-short");
     init_no_auto_alt(&tb);
     tb.write_home("s.txt##s", "first\n");
-    let r = tb.radm(&["add", "s.txt##s"]);
+    let r = tb.ryadm(&["add", "s.txt##s"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r1 = tb.radm(&["alt"]);
+    let r1 = tb.ryadm(&["alt"]);
     assert!(r1.success());
     assert_eq!(tb.read_home("s.txt"), "first\n");
 
     tb.write_home("s.txt##s", "second\n");
-    let r2 = tb.radm(&["alt"]);
+    let r2 = tb.ryadm(&["alt"]);
     assert!(r2.success());
     assert_eq!(tb.read_home("s.txt"), "first\n");
 }
@@ -210,12 +210,12 @@ fn unchanged_template_output_is_not_rewritten() {
     // A template whose rendered output never varies across runs (no
     // per-run-varying substitution such as timestamps).
     tb.write_home("stable.txt##template", "constant line\n");
-    let r = tb.radm(&["add", "stable.txt##template"]);
+    let r = tb.ryadm(&["add", "stable.txt##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r1 = tb.radm(&["alt"]);
+    let r1 = tb.ryadm(&["alt"]);
     assert!(r1.success());
     let target = tb.home_path("stable.txt");
 
@@ -227,7 +227,7 @@ fn unchanged_template_output_is_not_rewritten() {
     f.set_modified(far_past).unwrap();
     drop(f);
 
-    let r2 = tb.radm(&["alt"]);
+    let r2 = tb.ryadm(&["alt"]);
     assert!(r2.success(), "second alt failed: {r2:?}");
     let mtime2 = std::fs::metadata(&target).unwrap().modified().unwrap();
     assert_eq!(
@@ -251,12 +251,12 @@ fn template_error_prints_diagnostic_and_leaves_target_absent() {
     let tb = TestBed::new("tpl-error-endif");
     init_no_auto_alt(&tb);
     tb.write_home("bad.txt##template", "{% endif %}\n");
-    let r = tb.radm(&["add", "bad.txt##template"]);
+    let r = tb.ryadm(&["add", "bad.txt##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     // `yadm alt` itself still exits 0 even though one template failed to
     // render — no error exit propagates from a single failed template source.
     assert!(r.success(), "alt should still exit 0: {r:?}");
@@ -292,12 +292,12 @@ fn template_error_else_without_if_leaves_target_absent() {
     let tb = TestBed::new("tpl-error-else");
     init_no_auto_alt(&tb);
     tb.write_home("bad2.txt##template", "{% else %}\n");
-    let r = tb.radm(&["add", "bad2.txt##template"]);
+    let r = tb.ryadm(&["add", "bad2.txt##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success());
 
     let source = tb.home_path("bad2.txt##template");
@@ -325,12 +325,12 @@ fn include_resolves_relative_to_source_directory() {
         "sub/main.txt##template",
         "before\n{% include part.txt %}\nafter\n",
     );
-    let r = tb.radm(&["add", "sub/part.txt", "sub/main.txt##template"]);
+    let r = tb.ryadm(&["add", "sub/part.txt", "sub/main.txt##template"]);
     assert!(r.success(), "add failed: {r:?}");
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
     assert_eq!(
         tb.read_home("sub/main.txt"),
@@ -350,12 +350,12 @@ fn include_supports_nested_subdirectory_paths() {
         "sub/main.txt##template",
         "top\n{% include dir/nested.txt %}\nbottom\n",
     );
-    let r = tb.radm(&["add", "sub/dir/nested.txt", "sub/main.txt##template"]);
+    let r = tb.ryadm(&["add", "sub/dir/nested.txt", "sub/main.txt##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
     assert_eq!(
         tb.read_home("sub/main.txt"),
@@ -380,18 +380,18 @@ fn executable_bit_copied_from_source_template() {
         "#!/bin/sh\necho {{yadm.user}}\n",
         0o754,
     );
-    let r = tb.radm(&["add", "script.sh##template"]);
+    let r = tb.ryadm(&["add", "script.sh##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
-    let r = tb.radm(&["config", "local.user", "execuser"]);
+    let r = tb.ryadm(&["config", "local.user", "execuser"]);
     assert!(r.success());
 
     // Pre-create the target with a different, non-executable mode so we can
     // prove copy_perms overwrites it rather than leaving it alone.
     tb.write_home_mode("script.sh", "old content, different mode\n", 0o600);
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
 
     assert_eq!(
@@ -410,12 +410,12 @@ fn non_executable_source_mode_is_also_copied_verbatim() {
     let tb = TestBed::new("tpl-nonexec-mode");
     init_no_auto_alt(&tb);
     tb.write_home_mode("plain.txt##template", "plain content\n", 0o644);
-    let r = tb.radm(&["add", "plain.txt##template"]);
+    let r = tb.ryadm(&["add", "plain.txt##template"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success());
 
     assert_eq!(tb.mode("plain.txt"), 0o644);
@@ -438,12 +438,12 @@ fn template_condition_combined_with_mismatched_arch_never_renders() {
     let mismatched = format!("not{real_arch}");
     let name = format!("combo.txt##template,arch.{mismatched}");
     tb.write_home(&name, "should never render\n");
-    let r = tb.radm(&["add", &name]);
+    let r = tb.ryadm(&["add", &name]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
     assert!(
         !r.stdout.contains("Creating "),
@@ -463,12 +463,12 @@ fn template_condition_combined_with_matching_arch_renders() {
     let real_arch = host_arch();
     let name = format!("combo2.txt##template,arch.{real_arch}");
     tb.write_home(&name, "renders fine\n");
-    let r = tb.radm(&["add", &name]);
+    let r = tb.ryadm(&["add", &name]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "add"]);
+    let r = tb.ryadm(&["commit", "-m", "add"]);
     assert!(r.success());
 
-    let r = tb.radm(&["alt"]);
+    let r = tb.ryadm(&["alt"]);
     assert!(r.success(), "alt failed: {r:?}");
     assert_eq!(tb.read_home("combo2.txt"), "renders fine\n");
 }

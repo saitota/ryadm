@@ -6,13 +6,13 @@ mod common;
 use common::*;
 
 // ---------------------------------------------------------------------
-// Bootstrap command (`radm bootstrap`)
+// Bootstrap command (`ryadm bootstrap`)
 // ---------------------------------------------------------------------
 
 #[test]
 fn bootstrap_missing_errors_exactly_and_exits_1() {
     let tb = TestBed::new("bootstrap-missing");
-    let r = tb.radm(&["bootstrap"]);
+    let r = tb.ryadm(&["bootstrap"]);
     assert_eq!(r.code, 1);
     assert_eq!(r.stdout, "");
     let expected_path = tb.yadm_dir().join("bootstrap");
@@ -27,7 +27,7 @@ fn bootstrap_missing_errors_exactly_and_exits_1() {
 fn bootstrap_not_executable_errors_exactly_and_exits_1() {
     let tb = TestBed::new("bootstrap-not-exec");
     tb.write_home_mode(".config/yadm/bootstrap", "", 0o644);
-    let r = tb.radm(&["bootstrap"]);
+    let r = tb.ryadm(&["bootstrap"]);
     assert_eq!(r.code, 1);
     assert_eq!(r.stdout, "");
     assert!(r.err_contains("is not an executable program"));
@@ -38,7 +38,7 @@ fn bootstrap_executable_execs_and_propagates_exit_code() {
     let tb = TestBed::new("bootstrap-exec");
     let script = "#!/bin/bash\necho Bootstrap successful\nexit 123\n";
     tb.write_home_mode(".config/yadm/bootstrap", script, 0o775);
-    let r = tb.radm(&["bootstrap"]);
+    let r = tb.ryadm(&["bootstrap"]);
     assert_eq!(r.code, 123);
     assert_eq!(r.stderr, "");
     assert!(r.out_contains("Bootstrap successful"));
@@ -83,7 +83,7 @@ fn write_clone_bootstrap(tb: &TestBed) {
 fn clone_bootstrap_flag_missing_bootstrap_is_noop() {
     let tb = TestBed::new("clone-bs-force-missing");
     let remote = seed_remote_at(&tb);
-    let r = tb.radm(&["clone", "--bootstrap", &remote]);
+    let r = tb.ryadm(&["clone", "--bootstrap", &remote]);
     assert_eq!(r.code, 0);
     assert!(!r.out_contains(BOOTSTRAP_MSG));
 }
@@ -93,7 +93,7 @@ fn clone_bootstrap_flag_forces_execution_without_prompt() {
     let tb = TestBed::new("clone-bs-force-exists");
     let remote = seed_remote_at(&tb);
     write_clone_bootstrap(&tb);
-    let r = tb.radm(&["clone", "--bootstrap", &remote]);
+    let r = tb.ryadm(&["clone", "--bootstrap", &remote]);
     assert_eq!(r.code, BOOTSTRAP_CODE);
     assert!(r.out_contains(BOOTSTRAP_MSG));
     assert!(!r.out_contains("Would you like to execute it now"));
@@ -104,7 +104,7 @@ fn clone_no_bootstrap_flag_prevents_execution_without_prompt() {
     let tb = TestBed::new("clone-bs-prevent");
     let remote = seed_remote_at(&tb);
     write_clone_bootstrap(&tb);
-    let r = tb.radm(&["clone", "--no-bootstrap", &remote]);
+    let r = tb.ryadm(&["clone", "--no-bootstrap", &remote]);
     assert_eq!(r.code, 0);
     assert!(!r.out_contains(BOOTSTRAP_MSG));
     assert!(!r.out_contains("Would you like to execute it now"));
@@ -113,11 +113,11 @@ fn clone_no_bootstrap_flag_prevents_execution_without_prompt() {
 #[test]
 fn clone_default_ask_no_tty_shows_prompt_and_skips_bootstrap() {
     // No pty is attached (TestBed detaches the controlling terminal), so the
-    // `read -r answer </dev/tty` fails; radm/yadm both treat that as "no".
+    // `read -r answer </dev/tty` fails; ryadm/yadm both treat that as "no".
     let tb = TestBed::new("clone-bs-ask-no-tty");
     let remote = seed_remote_at(&tb);
     write_clone_bootstrap(&tb);
-    let r = tb.radm(&["clone", &remote]);
+    let r = tb.ryadm(&["clone", &remote]);
     assert_eq!(r.code, 0);
     assert!(r.out_contains("Found"));
     assert!(r.out_contains("It appears that a bootstrap program exists."));
@@ -129,7 +129,7 @@ fn clone_default_ask_no_tty_shows_prompt_and_skips_bootstrap() {
 fn clone_bootstrap_message_never_appears_when_bootstrap_absent() {
     let tb = TestBed::new("clone-bs-absent");
     let remote = seed_remote_at(&tb);
-    let r = tb.radm(&["clone", &remote]);
+    let r = tb.ryadm(&["clone", &remote]);
     assert_eq!(r.code, 0);
     assert!(!r.out_contains("Found"));
     assert!(!r.out_contains("Would you like to execute it now"));
@@ -231,7 +231,7 @@ fn hooks_pre_post_matrix_for_version_and_dashdash_version() {
                     c.post_code,
                 );
             }
-            let r = tb.radm(&[cmd]);
+            let r = tb.ryadm(&[cmd]);
 
             assert_eq!(
                 r.code, c.pre_code,
@@ -279,7 +279,7 @@ fn hooks_pre_post_matrix_for_version_and_dashdash_version() {
 fn pre_hook_failure_prints_exact_two_lines_and_propagates_exit_code() {
     let tb = TestBed::new("hooks-pre-fail-exact");
     create_hook(&tb, ".config/yadm/hooks/pre_version", "pre_version", 5);
-    let r = tb.radm(&["version"]);
+    let r = tb.ryadm(&["version"]);
     assert_eq!(r.code, 5);
     assert!(r.out_contains("Hook"));
     assert!(r.out_contains("was not successful"));
@@ -296,7 +296,7 @@ fn pre_hook_failure_prints_exact_two_lines_and_propagates_exit_code() {
 }
 
 /// Full hook env-var contract, using a real repo fixture and an unknown
-/// git subcommand ("passthrucmd"; radm passes git's own failure through).
+/// git subcommand ("passthrucmd"; ryadm passes git's own failure through).
 #[test]
 fn hook_env_vars_exact_set_and_values_for_passthru_command() {
     let tb = TestBed::new("hook-env-passthru");
@@ -305,7 +305,7 @@ fn hook_env_vars_exact_set_and_values_for_passthru_command() {
     let hook = "#!/bin/bash\nenv\n";
     tb.write_home_mode(".config/yadm/hooks/post_passthrucmd", hook, 0o755);
 
-    let r = tb.radm(&["passthrucmd", "extra_args"]);
+    let r = tb.ryadm(&["passthrucmd", "extra_args"]);
 
     assert!(!r.success(), "passthru of unknown git subcommand must fail");
     assert!(
@@ -338,7 +338,7 @@ fn hook_env_encrypt_include_files_is_literal_unparsed_in_pre_hooks() {
     tb.init_repo_with(&[]);
     let hook = "#!/bin/sh\necho YADM_ENCRYPT_INCLUDE_FILES=$YADM_ENCRYPT_INCLUDE_FILES\n";
     tb.write_home_mode(".config/yadm/hooks/pre_list", hook, 0o755);
-    let r = tb.radm(&["list"]);
+    let r = tb.ryadm(&["list"]);
     assert!(r.success(), "run: {r:?}");
     assert!(r.out_contains("YADM_ENCRYPT_INCLUDE_FILES=unparsed\n"));
 }
@@ -350,7 +350,7 @@ fn hook_full_command_escapes_backslash_tab_space_in_exact_order() {
     let hook = "#!/bin/bash\nenv\n";
     tb.write_home_mode(".config/yadm/hooks/post_passthrucmd", hook, 0o755);
 
-    let r = tb.radm(&["passthrucmd", "a b", "c\td", "e\\f"]);
+    let r = tb.ryadm(&["passthrucmd", "a b", "c\td", "e\\f"]);
     assert!(
         r.out_contains("YADM_HOOK_FULL_COMMAND=passthrucmd a\\ b c\\\td e\\\\f\n"),
         "stdout was: {:?}",
@@ -370,7 +370,7 @@ fn hooks_honored_for_internal_commands_with_yadm_dir_override() {
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(&hook_path, std::fs::Permissions::from_mode(0o755)).unwrap();
 
-    let r = tb.radm(&["-Y", &custom_dir.to_string_lossy(), "version"]);
+    let r = tb.ryadm(&["-Y", &custom_dir.to_string_lossy(), "version"]);
     assert!(r.success());
     assert!(r.out_contains("HOOK:pre_version"));
 }
@@ -383,7 +383,7 @@ fn hook_not_executable_is_silently_skipped() {
         "#!/bin/sh\necho HOOK\n",
         0o644,
     );
-    let r = tb.radm(&["version"]);
+    let r = tb.ryadm(&["version"]);
     assert!(r.success());
     assert!(!r.out_contains("HOOK"));
 }
@@ -396,7 +396,7 @@ fn hook_executable_runs() {
         "#!/bin/sh\necho HOOK\n",
         0o755,
     );
-    let r = tb.radm(&["version"]);
+    let r = tb.ryadm(&["version"]);
     assert!(r.success());
     assert!(r.out_contains("HOOK"));
 }
@@ -410,7 +410,7 @@ fn yadm_dir_and_yadm_data_relocate_config_and_repo() {
     let tb = TestBed::new("paths-y-and-data");
     let custom_dir = tb.root.join("custom-dir");
     let custom_data = tb.root.join("custom-data");
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "-Y",
         &custom_dir.to_string_lossy(),
         "--yadm-data",
@@ -427,7 +427,7 @@ fn yadm_dir_and_yadm_data_relocate_config_and_repo() {
 fn yadm_repo_override_relocates_repo_and_git_dir() {
     let tb = TestBed::new("paths-yadm-repo");
     let custom_repo = tb.root.join("elsewhere-repo.git");
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "--yadm-repo",
         &custom_repo.to_string_lossy(),
         "introspect",
@@ -446,7 +446,7 @@ fn yadm_repo_override_does_not_affect_archive() {
     // there's no `introspect archive`; exercise indirectly via the legacy
     // warning suppression rule instead, which is override_repo-sensitive.
     tb.write_home("config", ""); // no-op, keep testbed non-empty
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "--yadm-repo",
         &custom_repo.to_string_lossy(),
         "introspect",
@@ -465,7 +465,7 @@ fn yadm_bootstrap_override_relocates_bootstrap_script() {
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o775)).unwrap();
 
-    let r = tb.radm(&["--yadm-bootstrap", &script.to_string_lossy(), "bootstrap"]);
+    let r = tb.ryadm(&["--yadm-bootstrap", &script.to_string_lossy(), "bootstrap"]);
     assert_eq!(r.code, 123);
     assert!(r.out_contains("Bootstrap successful"));
     assert!(r.out_contains(&format!("Executing {}", script.display())));
@@ -478,7 +478,7 @@ fn yadm_config_encrypt_archive_overrides_are_independent_absolute_paths() {
     // vars from each other.
     let tb = TestBed::new("paths-yadm-config-independent");
     let custom_config = tb.root.join("custom.config");
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "--yadm-config",
         &custom_config.to_string_lossy(),
         "introspect",
@@ -494,7 +494,7 @@ fn relative_override_paths_are_qualified_against_cwd_not_home() {
     let subdir = tb.home.join("sub/deeper");
     std::fs::create_dir_all(&subdir).unwrap();
 
-    let r = tb.radm_in(
+    let r = tb.ryadm_in(
         &subdir,
         &["--yadm-repo", "relative-repo.git", "introspect", "repo"],
     );
@@ -506,7 +506,7 @@ fn relative_override_paths_are_qualified_against_cwd_not_home() {
 #[test]
 fn relative_override_path_with_leading_dot_slash_strips_one_prefix() {
     let tb = TestBed::new("paths-relative-dotslash");
-    let r = tb.radm(&["--yadm-repo", "./override-repo.git", "introspect", "repo"]);
+    let r = tb.ryadm(&["--yadm-repo", "./override-repo.git", "introspect", "repo"]);
     assert!(r.success(), "run: {r:?}");
     let expected = tb.home.join("override-repo.git");
     assert_eq!(r.stdout.trim_end(), expected.to_string_lossy());
@@ -515,7 +515,7 @@ fn relative_override_path_with_leading_dot_slash_strips_one_prefix() {
 #[test]
 fn relative_override_path_dot_resolves_to_cwd() {
     let tb = TestBed::new("paths-relative-dot");
-    let r = tb.radm(&["--yadm-repo", ".", "introspect", "repo"]);
+    let r = tb.ryadm(&["--yadm-repo", ".", "introspect", "repo"]);
     assert!(r.success(), "run: {r:?}");
     assert_eq!(r.stdout.trim_end(), tb.home.to_string_lossy());
 }
@@ -523,7 +523,7 @@ fn relative_override_path_dot_resolves_to_cwd() {
 #[test]
 fn empty_yadm_dir_path_errors_and_falls_through_to_help() {
     let tb = TestBed::new("paths-empty-yadm-dir");
-    let r = tb.radm(&["-Y"]);
+    let r = tb.ryadm(&["-Y"]);
     assert_eq!(r.code, 1);
     assert!(r.err_contains("You can't specify an empty yadm path"));
 }
@@ -531,7 +531,7 @@ fn empty_yadm_dir_path_errors_and_falls_through_to_help() {
 #[test]
 fn empty_yadm_data_path_errors() {
     let tb = TestBed::new("paths-empty-yadm-data");
-    let r = tb.radm(&["--yadm-data"]);
+    let r = tb.ryadm(&["--yadm-data"]);
     assert_eq!(r.code, 1);
     assert!(r.err_contains("You can't specify an empty data path"));
 }
@@ -544,7 +544,7 @@ fn empty_yadm_data_path_errors() {
 fn xdg_config_home_absolute_is_honored() {
     let tb = TestBed::new("xdg-config-absolute");
     let xdg = tb.root.join("xdg-config");
-    let r = tb.radm_env(
+    let r = tb.ryadm_env(
         &["introspect", "repo"],
         "XDG_CONFIG_HOME",
         &xdg.to_string_lossy(),
@@ -560,7 +560,7 @@ fn xdg_config_home_absolute_is_honored() {
 fn xdg_data_home_absolute_is_honored_for_repo_location() {
     let tb = TestBed::new("xdg-data-absolute");
     let xdg = tb.root.join("xdg-data");
-    let r = tb.radm_env(
+    let r = tb.ryadm_env(
         &["introspect", "repo"],
         "XDG_DATA_HOME",
         &xdg.to_string_lossy(),
@@ -573,7 +573,7 @@ fn xdg_data_home_absolute_is_honored_for_repo_location() {
 #[test]
 fn xdg_data_home_relative_value_falls_back_to_default() {
     let tb = TestBed::new("xdg-data-relative-fallback");
-    let r = tb.radm_env(
+    let r = tb.ryadm_env(
         &["introspect", "repo"],
         "XDG_DATA_HOME",
         "relative/xdg/path",
@@ -598,7 +598,7 @@ fn xdg_config_home_relative_value_falls_back_to_default() {
         "#!/bin/sh\necho HOOK\nexit 0\n",
         0o755,
     );
-    let r = tb.radm_env(&["version"], "XDG_CONFIG_HOME", "relative/xdg/config");
+    let r = tb.ryadm_env(&["version"], "XDG_CONFIG_HOME", "relative/xdg/config");
     assert!(r.success(), "run: {r:?}");
     assert!(r.out_contains("HOOK"));
 }
@@ -611,7 +611,7 @@ fn xdg_config_home_relative_value_falls_back_to_default() {
 fn legacy_warning_appears_when_legacy_config_exists() {
     let tb = TestBed::new("legacy-warning-appears");
     tb.write_home(".yadm/config", "");
-    let r = tb.radm(&["list"]);
+    let r = tb.ryadm(&["list"]);
     assert!(r.err_contains("**WARNING**"));
     assert!(r.err_contains("Legacy paths have been detected."));
     let legacy_config = tb.home.join(".yadm/config");
@@ -624,7 +624,7 @@ fn legacy_warning_appears_when_legacy_config_exists() {
 #[test]
 fn legacy_warning_absent_when_no_legacy_paths_exist() {
     let tb = TestBed::new("legacy-warning-absent");
-    let r = tb.radm(&["list"]);
+    let r = tb.ryadm(&["list"]);
     assert!(!r.err_contains("**WARNING**"));
 }
 
@@ -632,7 +632,7 @@ fn legacy_warning_absent_when_no_legacy_paths_exist() {
 fn legacy_warning_suppressed_during_upgrade() {
     let tb = TestBed::new("legacy-warning-suppressed-upgrade");
     tb.write_home(".yadm/config", "");
-    let r = tb.radm(&["upgrade"]);
+    let r = tb.ryadm(&["upgrade"]);
     assert!(!r.err_contains("**WARNING**"));
 }
 
@@ -641,7 +641,7 @@ fn legacy_warning_suppressed_with_yadm_repo_override() {
     let tb = TestBed::new("legacy-warning-suppressed-override");
     tb.write_home(".yadm/config", "");
     let custom_repo = tb.root.join("custom-repo.git");
-    let r = tb.radm(&["--yadm-repo", &custom_repo.to_string_lossy(), "list"]);
+    let r = tb.ryadm(&["--yadm-repo", &custom_repo.to_string_lossy(), "list"]);
     assert!(!r.err_contains("**WARNING**"));
 }
 
@@ -650,7 +650,7 @@ fn legacy_warning_suppressed_with_yadm_archive_override() {
     let tb = TestBed::new("legacy-warning-suppressed-archive-override");
     tb.write_home(".yadm/config", "");
     let custom_archive = tb.root.join("custom-archive");
-    let r = tb.radm(&["--yadm-archive", &custom_archive.to_string_lossy(), "list"]);
+    let r = tb.ryadm(&["--yadm-archive", &custom_archive.to_string_lossy(), "list"]);
     assert!(!r.err_contains("**WARNING**"));
 }
 
@@ -658,7 +658,7 @@ fn legacy_warning_suppressed_with_yadm_archive_override() {
 fn legacy_config_triggers_warning_on_stderr() {
     let tb = TestBed::new("legacy-warning");
     tb.write_home(".yadm/config", "");
-    let r = tb.radm(&["list"]);
+    let r = tb.ryadm(&["list"]);
     // a legacy path fires the warning, naming the detected legacy config file
     let legacy_config = tb.home.join(".yadm/config");
     assert!(r.stderr.contains("**WARNING**"));
@@ -672,7 +672,7 @@ fn legacy_warning_not_issued_when_yadm_dir_equals_legacy_dir() {
     let tb = TestBed::new("legacy-warning-dir-is-legacy-dir");
     tb.write_home(".yadm/config", "");
     let legacy_dir = tb.home.join(".yadm");
-    let r = tb.radm(&["-Y", &legacy_dir.to_string_lossy(), "list"]);
+    let r = tb.ryadm(&["-Y", &legacy_dir.to_string_lossy(), "list"]);
     assert!(!r.err_contains("**WARNING**"));
 }
 
@@ -686,7 +686,7 @@ fn work_tree_flag_uses_work_tree_label_in_empty_path_error() {
     // -w consumes the next token; passing it last means the "value" is
     // empty (no next arg), which qualify_path rejects with the "work tree"
     // label used by main()'s -w handling.
-    let r = tb.radm(&["init", "-w"]);
+    let r = tb.ryadm(&["init", "-w"]);
     assert_eq!(r.code, 1);
     assert!(r.err_contains("You can't specify an empty work tree path"));
 }
@@ -695,7 +695,7 @@ fn work_tree_flag_uses_work_tree_label_in_empty_path_error() {
 fn nonexistent_work_tree_errors_exactly() {
     let tb = TestBed::new("worktree-nonexistent");
     let bogus = tb.home.join("nonexistent-workdir-xyz");
-    let r = tb.radm(&["init", "-w", &bogus.to_string_lossy()]);
+    let r = tb.ryadm(&["init", "-w", &bogus.to_string_lossy()]);
     assert_eq!(r.code, 1);
     assert!(r.err_contains(&format!("Work tree does not exist: [{}]", bogus.display())));
 }

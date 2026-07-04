@@ -167,7 +167,7 @@ fn set_yadm_env(cmd: &mut Command, input: &str, values: &LocalValues) {
 mod tests {
     use super::*;
 
-    const MISSING: &str = "radm-definitely-not-a-real-program-xyz-123";
+    const MISSING: &str = "ryadm-definitely-not-a-real-program-xyz-123";
 
     fn ctx_with(awk_available: bool, esh: bool, j2cli: bool, envtpl: bool) -> Context {
         let mut ctx = Context::new();
@@ -273,7 +273,7 @@ mod tests {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let n = COUNTER.fetch_add(1, Ordering::SeqCst);
         let dir = std::env::temp_dir().join(format!(
-            "radm-template-test-{}-{}-{}",
+            "ryadm-template-test-{}-{}-{}",
             std::process::id(),
             n,
             hint

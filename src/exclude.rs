@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn writes_alt_entries_and_managed_block() {
         let tmp =
-            std::env::temp_dir().join(format!("radm-exclude-test-{}-{}", std::process::id(), "a"));
+            std::env::temp_dir().join(format!("ryadm-exclude-test-{}-{}", std::process::id(), "a"));
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(tmp.join("info")).unwrap();
         let ctx = test_ctx(tmp.to_str().unwrap());
@@ -122,7 +122,7 @@ mod tests {
     #[test]
     fn empty_entries_noop_when_no_part_file() {
         let tmp =
-            std::env::temp_dir().join(format!("radm-exclude-test-{}-{}", std::process::id(), "b"));
+            std::env::temp_dir().join(format!("ryadm-exclude-test-{}-{}", std::process::id(), "b"));
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(tmp.join("info")).unwrap();
         let ctx = test_ctx(tmp.to_str().unwrap());
@@ -138,7 +138,7 @@ mod tests {
     #[test]
     fn unchanged_part_content_is_noop() {
         let tmp =
-            std::env::temp_dir().join(format!("radm-exclude-test-{}-{}", std::process::id(), "c"));
+            std::env::temp_dir().join(format!("ryadm-exclude-test-{}-{}", std::process::id(), "c"));
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(tmp.join("info")).unwrap();
         let ctx = test_ctx(tmp.to_str().unwrap());
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn removing_entries_clears_alt_section() {
         let tmp =
-            std::env::temp_dir().join(format!("radm-exclude-test-{}-{}", std::process::id(), "d"));
+            std::env::temp_dir().join(format!("ryadm-exclude-test-{}-{}", std::process::id(), "d"));
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(tmp.join("info")).unwrap();
         let ctx = test_ctx(tmp.to_str().unwrap());

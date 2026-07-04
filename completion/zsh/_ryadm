@@ -1,35 +1,35 @@
-#compdef radm
+#compdef ryadm
 
 # This completion tries to fallback to git's completion for git commands.
 
-zstyle -T ':completion:*:radm:argument-1:descriptions:' format && \
-    zstyle ':completion:*:radm:argument-1:descriptions' format '%d:'
-zstyle -T ':completion:*:radm:*:radm' group-name && \
-    zstyle ':completion:*:radm:*:radm' group-name ''
+zstyle -T ':completion:*:ryadm:argument-1:descriptions:' format && \
+    zstyle ':completion:*:ryadm:argument-1:descriptions' format '%d:'
+zstyle -T ':completion:*:ryadm:*:ryadm' group-name && \
+    zstyle ':completion:*:ryadm:*:ryadm' group-name ''
 
-function _radm-add(){
+function _ryadm-add(){
   local -a yadm_options yadm_path
-  yadm_path="$(radm rev-parse --show-toplevel)"
-  yadm_options=($(radm status --porcelain=v1 |
+  yadm_path="$(ryadm rev-parse --show-toplevel)"
+  yadm_options=($(ryadm status --porcelain=v1 |
     awk -v yadm_path=${yadm_path} '{printf "%s/%s:%s\n",  yadm_path, $2, $1}' ))
 
   _describe 'command' yadm_options
   _files
 }
 
-function _radm-checkout(){
-    _radm-add
+function _ryadm-checkout(){
+    _ryadm-add
 }
 
-_radm-alt() {
+_ryadm-alt() {
     return 0
 }
 
-_radm-bootstrap() {
+_ryadm-bootstrap() {
     return 0
 }
 
-_radm-clone() {
+_ryadm-clone() {
     _arguments \
         '(--bootstrap --no-bootstrap)--bootstrap[force bootstrap, without prompt]' \
         '(--bootstrap --no-bootstrap)--no-bootstrap[prevent bootstrap, without prompt]' \
@@ -41,65 +41,65 @@ _radm-clone() {
     words=("git" "${words[@]}") CURRENT=$((CURRENT + 1)) service=git _git
 }
 
-_radm-config() {
+_ryadm-config() {
     # TODO: complete config names
 }
 
-_radm-decrypt() {
+_ryadm-decrypt() {
     _arguments \
         '-l[list files]'
 }
 
-_radm-encrypt() {
+_ryadm-encrypt() {
     return 0
 }
 
-_radm-enter() {
+_ryadm-enter() {
     _arguments \
         ':command: _command_names -e' \
         '*::arguments: _normal'
 }
 
-_radm-git-crypt() {
+_ryadm-git-crypt() {
     # TODO: complete git-crypt options
 }
 
-_radm-help() {
+_ryadm-help() {
     return 0
 }
 
-_radm-init() {
+_ryadm-init() {
     _arguments \
         '-f[force overwrite of existing repository]' \
         '-w[work tree path]: :_files -/'
 }
 
-_radm-list() {
+_ryadm-list() {
     _arguments \
         '-a[list all tracked files]'
 }
 
-_radm-perms() {
+_ryadm-perms() {
     return 0
 }
 
-_radm-transcrypt() {
+_ryadm-transcrypt() {
     integer _ret=1
     _call_function _ret _transcrypt
     return _ret
 }
 
-_radm-upgrade() {
+_ryadm-upgrade() {
     _arguments \
         '-f[force deinit of submodules]' \
         ': '
 }
 
-_radm-version() {
+_ryadm-version() {
     return 0
 }
 
-_radm_commands() {
+_ryadm_commands() {
     local -a commands=(
         alt:'create links for alternates'
         bootstrap:'execute bootstrap'
@@ -125,12 +125,12 @@ _radm_commands() {
     words=("git" "${words[-1]}") CURRENT=2 service=git _git
 
     curcontext="$oldcontext"
-    _describe -t radm "radm commands" commands
+    _describe -t ryadm "ryadm commands" commands
 
     return 0
 }
 
-_radm() {
+_ryadm() {
     local curcontext=$curcontext state state_descr line
     declare -A opt_args
 
@@ -150,17 +150,17 @@ _radm() {
     local -a repo_args
     (( $+opt_args[--yadm-repo] )) && repo_args+=(--yadm-repo "$opt_args[--yadm-repo]")
     (( $+opt_args[--yadm-data] )) && repo_args+=(--yadm-data "$opt_args[--yadm-data]")
-    local -x GIT_DIR="$(_call_program gitdir radm "${repo_args[@]}" introspect repo)"
+    local -x GIT_DIR="$(_call_program gitdir ryadm "${repo_args[@]}" introspect repo)"
     [[ -z "$GIT_DIR" ]] && return 1
 
     integer _ret=1
     case $state in
         (command)
-            _radm_commands && _ret=0
+            _ryadm_commands && _ret=0
             ;;
         (option-or-argument)
-            curcontext=${curcontext%:*:*}:radm-${words[1]}:
-            if ! _call_function _ret _radm-${words[1]}; then
+            curcontext=${curcontext%:*:*}:ryadm-${words[1]}:
+            if ! _call_function _ret _ryadm-${words[1]}; then
 
                 # Translate gitconfig to use the regular completion for config
                 [[ ${words[1]} = "gitconfig" ]] && words[1]=config
@@ -177,4 +177,4 @@ _radm() {
     return _ret
 }
 
-(( $+functions[_git] )) && _radm
+(( $+functions[_git] )) && _ryadm

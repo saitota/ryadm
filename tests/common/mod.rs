@@ -1,4 +1,4 @@
-//! Shared harness for radm integration tests.
+//! Shared harness for ryadm integration tests.
 //!
 //! Each `TestBed` is a hermetic environment: its own HOME, a private git
 //! identity, deterministic commit timestamps, and no controlling terminal
@@ -77,30 +77,30 @@ impl TestBed {
         detach_tty(c);
     }
 
-    pub fn radm_bin() -> &'static str {
-        env!("CARGO_BIN_EXE_radm")
+    pub fn ryadm_bin() -> &'static str {
+        env!("CARGO_BIN_EXE_ryadm")
     }
 
-    /// Run radm with args; stdin closed.
-    pub fn radm(&self, args: &[&str]) -> RunResult {
-        let mut c = Command::new(Self::radm_bin());
+    /// Run ryadm with args; stdin closed.
+    pub fn ryadm(&self, args: &[&str]) -> RunResult {
+        let mut c = Command::new(Self::ryadm_bin());
         self.apply_env(&mut c);
         c.args(args);
         run(c, None)
     }
 
-    /// Run radm with an extra environment variable.
-    pub fn radm_env(&self, args: &[&str], key: &str, value: &str) -> RunResult {
-        let mut c = Command::new(Self::radm_bin());
+    /// Run ryadm with an extra environment variable.
+    pub fn ryadm_env(&self, args: &[&str], key: &str, value: &str) -> RunResult {
+        let mut c = Command::new(Self::ryadm_bin());
         self.apply_env(&mut c);
         c.env(key, value);
         c.args(args);
         run(c, None)
     }
 
-    /// Run radm from a specific working directory.
-    pub fn radm_in(&self, dir: &Path, args: &[&str]) -> RunResult {
-        let mut c = Command::new(Self::radm_bin());
+    /// Run ryadm from a specific working directory.
+    pub fn ryadm_in(&self, dir: &Path, args: &[&str]) -> RunResult {
+        let mut c = Command::new(Self::ryadm_bin());
         self.apply_env(&mut c);
         c.current_dir(dir);
         c.env("PWD", dir);
@@ -183,17 +183,17 @@ impl TestBed {
 
     // ---- common fixtures -------------------------------------------------
 
-    /// radm init + commit the given (path, content) files as tracked files.
+    /// ryadm init + commit the given (path, content) files as tracked files.
     pub fn init_repo_with(&self, files: &[(&str, &str)]) {
-        let r = self.radm(&["init"]);
+        let r = self.ryadm(&["init"]);
         assert!(r.success(), "init failed: {r:?}");
         for (path, content) in files {
             self.write_home(path, content);
-            let r = self.radm(&["add", path]);
+            let r = self.ryadm(&["add", path]);
             assert!(r.success(), "add {path} failed: {r:?}");
         }
         if !files.is_empty() {
-            let r = self.radm(&["commit", "-m", "test data"]);
+            let r = self.ryadm(&["commit", "-m", "test data"]);
             assert!(r.success(), "commit failed: {r:?}");
         }
     }

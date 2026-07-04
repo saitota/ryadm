@@ -1,4 +1,4 @@
-//! radm — Rust (Yet) Another Dotfiles Manager.
+//! ryadm — Rust (Yet) Another Dotfiles Manager.
 //!
 //! A byte-compatible reimplementation of yadm 3.5.0. Control flow mirrors
 //! the original script: global args → OS detection → path resolution →

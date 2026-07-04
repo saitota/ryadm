@@ -50,7 +50,7 @@ fn make_remote(tb: &TestBed, name: &str, files: &[(&str, &str)]) -> std::path::P
         {
             script.push_str(&format!("mkdir -p '{}'\n", parent.display()));
         }
-        script.push_str(&format!("cat > '{path}' <<'RADMEOF'\n{content}RADMEOF\n"));
+        script.push_str(&format!("cat > '{path}' <<'RYADMEOF'\n{content}RYADMEOF\n"));
         if content.starts_with("#!") {
             script.push_str(&format!("chmod 0755 '{path}'\n"));
         }
@@ -74,7 +74,7 @@ fn make_remote(tb: &TestBed, name: &str, files: &[(&str, &str)]) -> std::path::P
 #[test]
 fn init_simple_success_sets_expected_config() {
     let tb = TestBed::new("init-simple");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.out_contains("Initialized empty shared Git repository"));
     assert_eq!(r.stderr, "", "fresh init must have empty stderr");
     assert!(r.success());
@@ -97,7 +97,7 @@ fn init_with_w_sets_alternate_worktree() {
     let work = tb.root.join("altwork");
     std::fs::create_dir_all(&work).unwrap();
 
-    let r = tb.radm(&["init", "-w", work.to_str().unwrap()]);
+    let r = tb.ryadm(&["init", "-w", work.to_str().unwrap()]);
     assert!(r.success());
     assert!(r.out_contains("Initialized empty shared Git repository"));
     assert_eq!(r.stderr, "");
@@ -116,7 +116,7 @@ fn init_existing_repo_without_force_fails_and_preserves_content() {
     let marker = tb.repo().join("old_repo");
     std::fs::write(&marker, "keep me").unwrap();
 
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(!r.success(), "init over existing repo must fail");
     assert_eq!(r.stdout, "");
     assert!(r.err_contains("repo already exists"));
@@ -139,7 +139,7 @@ fn init_force_reinit_destroys_old_repo_and_succeeds() {
     let marker = tb.repo().join("old_repo");
     std::fs::write(&marker, "destroy me").unwrap();
 
-    let r = tb.radm(&["init", "-f"]);
+    let r = tb.ryadm(&["init", "-f"]);
     assert!(r.success());
     assert!(r.out_contains("Initialized empty shared Git repository"));
     assert!(
@@ -170,7 +170,7 @@ fn init_w_and_force_together_relative_work_path() {
     std::fs::create_dir_all(&work).unwrap();
 
     // `-w work` (relative), run with cwd = work's dirname.
-    let r = tb.radm_in(&work_parent, &["init", "-w", "work", "-f"]);
+    let r = tb.ryadm_in(&work_parent, &["init", "-w", "work", "-f"]);
     assert!(r.success());
     assert!(r.out_contains("Initialized empty shared Git repository"));
     assert!(!marker.exists());
@@ -188,7 +188,7 @@ fn clone_bad_remote_cleans_up_and_reports_exact_error() {
     let tb = TestBed::new("clone-bad-remote");
     let bogus = tb.home.join("does-not-exist.git");
 
-    let r = tb.radm(&["clone", bogus.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", bogus.to_str().unwrap()]);
     assert!(!r.success());
     assert_eq!(r.stdout, "");
     assert!(r.err_contains("Unable to clone the repository"));
@@ -201,7 +201,7 @@ fn clone_bad_remote_cleans_up_and_reports_exact_error() {
 #[test]
 fn clone_no_repository_specified() {
     let tb = TestBed::new("clone-no-repo");
-    let r = tb.radm(&["clone", "-f"]);
+    let r = tb.ryadm(&["clone", "-f"]);
     assert!(!r.success());
     assert_eq!(r.stdout, "");
     assert!(r.err_contains("ERROR: Unable to clone the repository"));
@@ -213,7 +213,7 @@ fn clone_simple_success_sets_head_and_remote() {
     let tb = TestBed::new("clone-simple");
     let remote = make_remote(&tb, "r", &[("t1", "cloned content\n")]);
 
-    let r = tb.radm(&["clone", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", remote.to_str().unwrap()]);
     assert!(r.success());
     let repo = tb.repo();
     assert_eq!(mode_of(&repo) & 0o077, 0);
@@ -226,7 +226,7 @@ fn clone_simple_success_sets_head_and_remote() {
 
     assert_eq!(tb.read_home("t1"), "cloned content\n");
 
-    let remote_v = tb.radm(&["remote", "-v", "show"]);
+    let remote_v = tb.ryadm(&["remote", "-v", "show"]);
     assert!(remote_v.success());
     assert_eq!(remote_v.stderr, "");
     assert!(remote_v.out_contains(&format!("origin\t{}", remote.display())));
@@ -240,7 +240,7 @@ fn clone_existing_repo_without_force_fails_preserving_marker() {
     let marker = tb.repo().join("old_repo");
     std::fs::write(&marker, "keep me").unwrap();
 
-    let r = tb.radm(&["clone", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", remote.to_str().unwrap()]);
     assert!(!r.success());
     assert_eq!(r.stdout, "");
     assert!(r.err_contains("Git repo already exists"));
@@ -255,7 +255,7 @@ fn clone_force_overwrites_existing_repo() {
     let marker = tb.repo().join("old_repo");
     std::fs::write(&marker, "destroy me").unwrap();
 
-    let r = tb.radm(&["clone", "-f", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "-f", remote.to_str().unwrap()]);
     assert!(r.success());
     assert!(!marker.exists());
     let repo = tb.repo();
@@ -271,7 +271,7 @@ fn clone_conflicts_preserves_local_file_and_prints_note() {
     let remote = make_remote(&tb, "r", &[("t1", "cloned content\n")]);
     tb.write_home("t1", "conflict\n");
 
-    let r = tb.radm(&["clone", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", remote.to_str().unwrap()]);
     assert!(r.success());
     assert!(r.out_contains("NOTE"));
     assert!(r.out_contains("Local files with content that differs"));
@@ -279,12 +279,12 @@ fn clone_conflicts_preserves_local_file_and_prints_note() {
     // local content preserved, not overwritten
     assert_eq!(tb.read_home("t1"), "conflict\n");
 
-    let status = tb.radm(&["status", "-uno", "--porcelain"]);
+    let status = tb.ryadm(&["status", "-uno", "--porcelain"]);
     assert!(status.success());
     assert_eq!(status.stderr, "");
     assert!(status.out_contains("t1"));
 
-    let diff = tb.radm(&["diff"]);
+    let diff = tb.ryadm(&["diff"]);
     assert!(diff.out_contains("+conflict"));
 }
 
@@ -293,11 +293,11 @@ fn clone_no_checkout_leaves_worktree_empty() {
     let tb = TestBed::new("clone-no-checkout");
     let remote = make_remote(&tb, "r", &[("t1", "cloned content\n")]);
 
-    let r = tb.radm(&["clone", "-n", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "-n", remote.to_str().unwrap()]);
     assert!(r.success());
     assert!(!tb.exists("t1"), "-n must skip checkout entirely");
 
-    let r2 = tb.radm(&["clone", "--no-checkout", "-f", remote.to_str().unwrap()]);
+    let r2 = tb.ryadm(&["clone", "--no-checkout", "-f", remote.to_str().unwrap()]);
     assert!(r2.success());
     assert!(!tb.exists("t1"));
 }
@@ -309,7 +309,7 @@ fn clone_from_subdirectory_of_worktree_is_clean() {
     let subdir = tb.home.join("subdir");
     std::fs::create_dir_all(&subdir).unwrap();
 
-    let r = tb.radm_in(
+    let r = tb.ryadm_in(
         &subdir,
         &[
             "clone",
@@ -320,7 +320,7 @@ fn clone_from_subdirectory_of_worktree_is_clean() {
     );
     assert!(r.success());
 
-    let status = tb.radm_in(&subdir, &["status", "-uno", "--porcelain"]);
+    let status = tb.ryadm_in(&subdir, &["status", "-uno", "--porcelain"]);
     assert!(status.success());
     assert_eq!(status.stdout, "", "clean checkout should show no changes");
 }
@@ -359,7 +359,7 @@ fn clone_submodules_recursive_checks_out_all() {
     let tb = TestBed::new("clone-subm-recursive");
     let remote = make_remote_with_submodule(&tb);
 
-    let r = tb.radm(&["clone", "--recursive", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "--recursive", remote.to_str().unwrap()]);
     assert!(r.success(), "recursive clone failed: {r:?}");
     assert!(tb.exists("a/.git"));
     assert!(tb.exists("b/.git"));
@@ -371,7 +371,7 @@ fn clone_submodules_recurse_alias_matches_recursive() {
     let tb = TestBed::new("clone-subm-recurse-alias");
     let remote = make_remote_with_submodule(&tb);
 
-    let r = tb.radm(&["clone", "--recurse-submodules", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "--recurse-submodules", remote.to_str().unwrap()]);
     assert!(r.success(), "recurse-submodules clone failed: {r:?}");
     assert!(tb.exists("a/.git"));
     assert!(tb.exists("b/.git"));
@@ -383,7 +383,7 @@ fn clone_submodules_specific_paths_only() {
     let tb = TestBed::new("clone-subm-specific");
     let remote = make_remote_with_submodule(&tb);
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "clone",
         "--recurse-submodules=a",
         "--recurse-submodules=d1/c",
@@ -418,7 +418,7 @@ fn clone_bootstrap_flag_missing_file_no_op() {
     let tb = TestBed::new("clone-bs-force-missing");
     let remote = make_remote(&tb, "r", &[("t1", "cloned content\n")]);
 
-    let r = tb.radm(&["clone", "--bootstrap", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "--bootstrap", remote.to_str().unwrap()]);
     assert!(r.success());
     assert_eq!(r.code, 0);
     assert!(!r.out_contains("Bootstrap successful"));
@@ -429,7 +429,7 @@ fn clone_bootstrap_flag_existing_file_forces_exec() {
     let tb = TestBed::new("clone-bs-force-existing");
     let remote = make_remote_with_bootstrap(&tb);
 
-    let r = tb.radm(&["clone", "--bootstrap", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "--bootstrap", remote.to_str().unwrap()]);
     assert_eq!(r.code, 123);
     assert!(r.out_contains("Bootstrap successful"));
     // clone itself succeeded regardless of the bootstrap exit code
@@ -442,7 +442,7 @@ fn clone_no_bootstrap_flag_prevents_even_when_present() {
     let tb = TestBed::new("clone-bs-prevent");
     let remote = make_remote_with_bootstrap(&tb);
 
-    let r = tb.radm(&["clone", "--no-bootstrap", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "--no-bootstrap", remote.to_str().unwrap()]);
     assert!(r.success());
     assert_eq!(r.code, 0);
     assert!(!r.out_contains("Bootstrap successful"));
@@ -453,7 +453,7 @@ fn clone_bootstrap_missing_file_default_prompt_is_noop() {
     let tb = TestBed::new("clone-bs-default-missing");
     let remote = make_remote(&tb, "r", &[("t1", "cloned content\n")]);
 
-    let r = tb.radm(&["clone", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", remote.to_str().unwrap()]);
     assert!(r.success());
     assert_eq!(r.code, 0);
     assert!(!r.out_contains("Bootstrap successful"));
@@ -468,7 +468,7 @@ fn clone_bootstrap_default_prompt_no_tty_declines() {
     let tb = TestBed::new("clone-bs-default-notty");
     let remote = make_remote_with_bootstrap(&tb);
 
-    let r = tb.radm(&["clone", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", remote.to_str().unwrap()]);
     assert!(r.success());
     assert_eq!(r.code, 0);
     assert!(r.out_contains("Found"));
@@ -497,7 +497,7 @@ fn clone_perms_ssh_preexisting_insecure_left_until_final_sweep() {
     tb.write_home(".ssh/placeholder", "x\n");
     std::fs::set_permissions(tb.home.join(".ssh"), std::fs::Permissions::from_mode(0o777)).unwrap();
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "clone",
         "-d",
         "-w",
@@ -518,7 +518,7 @@ fn clone_perms_ssh_absent_created_secure_from_the_start() {
     let tb = TestBed::new("clone-perms-ssh-notinwork");
     let remote = make_remote_with_private_dir(&tb, ".ssh");
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "clone",
         "-d",
         "-w",
@@ -544,7 +544,7 @@ fn clone_perms_gnupg_preexisting_insecure_left_until_final_sweep() {
     )
     .unwrap();
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "clone",
         "-d",
         "-w",
@@ -563,7 +563,7 @@ fn clone_perms_gnupg_absent_created_secure_from_the_start() {
     let tb = TestBed::new("clone-perms-gnupg-notinwork");
     let remote = make_remote_with_private_dir(&tb, ".gnupg");
 
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "clone",
         "-d",
         "-w",
@@ -605,16 +605,16 @@ fn clone_alternate_branch_master_default() {
     let tb = TestBed::new("clone-branch-master");
     let remote = make_remote_with_branches(&tb, "master");
 
-    let r = tb.radm(&["clone", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", remote.to_str().unwrap()]);
     assert!(r.success());
     let repo = tb.repo();
     let head = std::fs::read_to_string(repo.join("HEAD")).unwrap();
     assert_eq!(head, "ref: refs/heads/master\n");
 
-    let show = tb.radm(&["show"]);
+    let show = tb.ryadm(&["show"]);
     assert!(show.out_contains("Initial commit"));
 
-    let remote_v = tb.radm(&["remote", "-v", "show"]);
+    let remote_v = tb.ryadm(&["remote", "-v", "show"]);
     assert!(remote_v.out_contains(&format!("origin\t{}", remote.display())));
 }
 
@@ -623,15 +623,15 @@ fn clone_alternate_branch_follows_remote_default_head() {
     let tb = TestBed::new("clone-branch-default");
     let remote = make_remote_with_branches(&tb, "valid");
 
-    // no -b flag: yadm/radm must not hardcode "master", it follows git's own
+    // no -b flag: yadm/ryadm must not hardcode "master", it follows git's own
     // default-branch detection (remote HEAD points at "valid").
-    let r = tb.radm(&["clone", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", remote.to_str().unwrap()]);
     assert!(r.success());
     let repo = tb.repo();
     let head = std::fs::read_to_string(repo.join("HEAD")).unwrap();
     assert_eq!(head, "ref: refs/heads/valid\n");
 
-    let show = tb.radm(&["show"]);
+    let show = tb.ryadm(&["show"]);
     assert!(show.out_contains("This branch is valid"));
 }
 
@@ -640,16 +640,16 @@ fn clone_alternate_branch_explicit_valid() {
     let tb = TestBed::new("clone-branch-explicit-valid");
     let remote = make_remote_with_branches(&tb, "master");
 
-    let r = tb.radm(&["clone", "-b", "valid", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "-b", "valid", remote.to_str().unwrap()]);
     assert!(r.success());
     let repo = tb.repo();
     let head = std::fs::read_to_string(repo.join("HEAD")).unwrap();
     assert_eq!(head, "ref: refs/heads/valid\n");
 
-    let show = tb.radm(&["show"]);
+    let show = tb.ryadm(&["show"]);
     assert!(show.out_contains("This branch is valid"));
 
-    let remote_v = tb.radm(&["remote", "-v", "show"]);
+    let remote_v = tb.ryadm(&["remote", "-v", "show"]);
     assert!(remote_v.out_contains(&format!("origin\t{}", remote.display())));
 }
 
@@ -658,7 +658,7 @@ fn clone_alternate_branch_invalid_fails_with_both_messages() {
     let tb = TestBed::new("clone-branch-invalid");
     let remote = make_remote_with_branches(&tb, "master");
 
-    let r = tb.radm(&["clone", "-b", "invalid", remote.to_str().unwrap()]);
+    let r = tb.ryadm(&["clone", "-b", "invalid", remote.to_str().unwrap()]);
     assert!(!r.success());
     assert!(r.err_contains("ERROR: Unable to clone the repository"));
     assert!(r.err_contains("Remote branch invalid not found in upstream"));
@@ -671,10 +671,10 @@ fn clone_alternate_branch_invalid_fails_with_both_messages() {
 #[test]
 fn upgrade_no_legacy_paths_reports_not_necessary() {
     let tb = TestBed::new("upgrade-no-paths");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
-    let r = tb.radm(&["upgrade"]);
+    let r = tb.ryadm(&["upgrade"]);
     assert!(r.success());
     assert_eq!(r.code, 0);
     assert!(r.out_contains("No legacy paths found. Upgrade is not necessary"));
@@ -684,7 +684,7 @@ fn upgrade_no_legacy_paths_reports_not_necessary() {
 #[test]
 fn upgrade_override_repo_guard_error() {
     let tb = TestBed::new("upgrade-override-guard");
-    let r = tb.radm(&[
+    let r = tb.ryadm(&[
         "--yadm-repo",
         tb.home.join("other-repo.git").to_str().unwrap(),
         "upgrade",
@@ -703,7 +703,7 @@ fn upgrade_existing_target_repo_collision_error() {
     std::fs::create_dir_all(tb.yadm_dir().join("repo.git")).unwrap();
     std::fs::create_dir_all(tb.repo()).unwrap();
 
-    let r = tb.radm(&["upgrade"]);
+    let r = tb.ryadm(&["upgrade"]);
     assert!(!r.success());
     assert_eq!(r.code, 1);
     assert!(r.err_contains("Unable to upgrade"));
@@ -731,7 +731,7 @@ fn upgrade_moves_legacy_repo_and_v1_paths() {
     std::fs::write(legacy_dir.join("bootstrap"), "bootstrap content").unwrap();
     std::fs::write(legacy_dir.join("hooks/pre_cmd"), "hook content").unwrap();
 
-    let r = tb.radm(&["upgrade"]);
+    let r = tb.ryadm(&["upgrade"]);
     assert!(r.success());
     assert_eq!(r.code, 0);
     assert!(r.out_contains(&format!(
@@ -761,9 +761,9 @@ fn upgrade_moves_legacy_repo_and_v1_paths() {
     assert_eq!(tb.read_home(".config/yadm/hooks/pre_cmd"), "hook content");
 
     // repo relocated but content intact
-    let status = tb.radm(&["status"]);
+    let status = tb.ryadm(&["status"]);
     assert!(status.success());
-    let show = tb.radm(&["show", "HEAD:t1"]);
+    let show = tb.ryadm(&["show", "HEAD:t1"]);
     assert!(show.out_contains("data"));
 }
 
@@ -772,13 +772,13 @@ fn upgrade_never_runs_post_hook_on_success() {
     // yadm's upgrade() does a hard `exit 0`, bypassing exit_with_hook -- the
     // post hook must not fire for a successful upgrade.
     let tb = TestBed::new("upgrade-no-post-hook");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
 
     let post_hook = "#!/bin/sh\necho POST_HOOK_RAN\n";
     tb.write_home_mode(".config/yadm/hooks/post_upgrade", post_hook, 0o755);
 
-    let r = tb.radm(&["upgrade"]);
+    let r = tb.ryadm(&["upgrade"]);
     assert!(r.success());
     assert!(!r.out_contains("POST_HOOK_RAN"));
 }
@@ -792,7 +792,7 @@ fn git_passthrough_unknown_subcommand() {
     let tb = TestBed::new("git-bogus");
     tb.init_repo_with(&[("t1", "data\n")]);
 
-    let r = tb.radm(&["bogus"]);
+    let r = tb.ryadm(&["bogus"]);
     assert!(!r.success());
     assert_eq!(r.stdout, "");
     assert!(r.err_contains("is not a git command"));
@@ -803,7 +803,7 @@ fn git_passthrough_bad_pathspec_exit_code_128() {
     let tb = TestBed::new("git-bad-pathspec");
     tb.init_repo_with(&[("t1", "data\n")]);
 
-    let r = tb.radm(&["add", "-v", "does_not_exist"]);
+    let r = tb.ryadm(&["add", "-v", "does_not_exist"]);
     assert_eq!(r.code, 128);
     assert_eq!(r.stdout, "");
     assert!(r.err_contains("pathspec 'does_not_exist' did not match any files"));
@@ -815,7 +815,7 @@ fn git_passthrough_add_new_file_succeeds() {
     tb.init_repo_with(&[("t1", "data\n")]);
     tb.write_home("newfile", "content\n");
 
-    let r = tb.radm(&["add", "-v", "newfile"]);
+    let r = tb.ryadm(&["add", "-v", "newfile"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert!(r.out_contains("add 'newfile'"));
@@ -826,10 +826,10 @@ fn git_passthrough_status_shows_new_file() {
     let tb = TestBed::new("git-status");
     tb.init_repo_with(&[("t1", "data\n")]);
     tb.write_home("newfile", "content\n");
-    let add = tb.radm(&["add", "newfile"]);
+    let add = tb.ryadm(&["add", "newfile"]);
     assert!(add.success());
 
-    let r = tb.radm(&["status"]);
+    let r = tb.ryadm(&["status"]);
     assert!(r.success());
     assert_eq!(r.stderr, "");
     assert!(r.out_contains("new file:"));
@@ -841,16 +841,16 @@ fn git_passthrough_commit_and_log() {
     let tb = TestBed::new("git-commit-log");
     tb.init_repo_with(&[("t1", "data\n")]);
     tb.write_home("newfile", "content\n");
-    let add = tb.radm(&["add", "newfile"]);
+    let add = tb.ryadm(&["add", "newfile"]);
     assert!(add.success());
 
-    let commit = tb.radm(&["commit", "-m", "Add newfile"]);
+    let commit = tb.ryadm(&["commit", "-m", "Add newfile"]);
     assert!(commit.success());
     assert_eq!(commit.stderr, "");
     assert!(commit.out_contains("1 file changed"));
     assert!(commit.out_contains("1 insertion"));
 
-    let log = tb.radm(&["log", "--oneline"]);
+    let log = tb.ryadm(&["log", "--oneline"]);
     assert!(log.success());
     assert_eq!(log.stderr, "");
     assert!(log.out_contains("Add newfile"));
@@ -860,7 +860,7 @@ fn git_passthrough_commit_and_log() {
 fn gitconfig_translates_to_config() {
     let tb = TestBed::new("gitconfig-translate");
     tb.init_repo_with(&[]);
-    let r = tb.radm(&["gitconfig", "user.name"]);
+    let r = tb.ryadm(&["gitconfig", "user.name"]);
     assert!(r.success());
     assert_eq!(r.stdout.trim_end(), "Test User");
 }
@@ -874,7 +874,7 @@ fn clean_is_disabled_with_exact_message() {
     let tb = TestBed::new("clean-disabled");
     tb.init_repo_with(&[("t1", "data\n")]);
 
-    let r = tb.radm(&["clean"]);
+    let r = tb.ryadm(&["clean"]);
     assert!(!r.success());
     assert_eq!(r.code, 1);
     assert_eq!(r.stdout, "");
@@ -889,7 +889,7 @@ fn clean_is_disabled_regardless_of_arguments() {
     let tb = TestBed::new("clean-disabled-args");
     tb.init_repo_with(&[("t1", "data\n")]);
 
-    let r = tb.radm(&["clean", "-fdx"]);
+    let r = tb.ryadm(&["clean", "-fdx"]);
     assert!(!r.success());
     assert_eq!(r.code, 1);
     assert_eq!(r.stdout, "");

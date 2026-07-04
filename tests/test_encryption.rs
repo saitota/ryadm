@@ -19,9 +19,9 @@ const OPENSSL_WRAPPER: &str = "#!/bin/sh\nexec openssl \"$@\" -pass pass:test\n"
 fn setup_openssl_cipher(tb: &TestBed) -> String {
     tb.write_home_mode(".wrap/openssl-wrap", OPENSSL_WRAPPER, 0o755);
     let wrapper_path = tb.home_path(".wrap/openssl-wrap").display().to_string();
-    let r = tb.radm(&["config", "yadm.cipher", "openssl"]);
+    let r = tb.ryadm(&["config", "yadm.cipher", "openssl"]);
     assert!(r.success(), "config cipher failed: {r:?}");
-    let r = tb.radm(&["config", "yadm.openssl-program", &wrapper_path]);
+    let r = tb.ryadm(&["config", "yadm.openssl-program", &wrapper_path]);
     assert!(r.success(), "config openssl-program failed: {r:?}");
     wrapper_path
 }
@@ -52,9 +52,9 @@ fn setup_openssl_cipher_logging(tb: &TestBed, log_path: &str) -> String {
     );
     tb.write_home_mode(".wrap/openssl-wrap-log", &wrapper, 0o755);
     let wrapper_path = tb.home_path(".wrap/openssl-wrap-log").display().to_string();
-    let r = tb.radm(&["config", "yadm.cipher", "openssl"]);
+    let r = tb.ryadm(&["config", "yadm.cipher", "openssl"]);
     assert!(r.success());
-    let r = tb.radm(&["config", "yadm.openssl-program", &wrapper_path]);
+    let r = tb.ryadm(&["config", "yadm.openssl-program", &wrapper_path]);
     assert!(r.success());
     wrapper_path
 }
@@ -66,7 +66,7 @@ fn setup_openssl_cipher_logging(tb: &TestBed, log_path: &str) -> String {
 #[test]
 fn encrypt_happy_path_lists_files_in_order_and_writes_archive() {
     let tb = TestBed::new("enc-happy");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
@@ -74,7 +74,7 @@ fn encrypt_happy_path_lists_files_in_order_and_writes_archive() {
     tb.write_home("secret1", "secret one\n");
     tb.write_home("secret2", "secret two\n");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "", "stderr must be empty on success golden path");
 
@@ -96,7 +96,7 @@ fn encrypt_happy_path_lists_files_in_order_and_writes_archive() {
 #[test]
 fn encrypt_empty_include_list_still_writes_archive() {
     let tb = TestBed::new("enc-empty");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
@@ -112,7 +112,7 @@ fn encrypt_empty_include_list_still_writes_archive() {
     // asserted empty here.
     tb.write_home(".config/yadm/encrypt", "# nothing to encrypt\n\n");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     let expected = format!(
         "Encrypting the following files:\n\n{}",
@@ -125,19 +125,19 @@ fn encrypt_empty_include_list_still_writes_archive() {
 #[test]
 fn encrypt_warns_about_tracked_files_matching_patterns() {
     let tb = TestBed::new("enc-tracked-warn");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
     tb.write_home(".config/yadm/encrypt", "secret*\n");
     tb.write_home("secret_untracked", "untracked\n");
     tb.write_home("secret_tracked", "tracked\n");
-    let r = tb.radm(&["add", "secret_tracked"]);
+    let r = tb.ryadm(&["add", "secret_tracked"]);
     assert!(r.success());
-    let r = tb.radm(&["commit", "-m", "track a secret-matching file"]);
+    let r = tb.ryadm(&["commit", "-m", "track a secret-matching file"]);
     assert!(r.success());
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "");
 
@@ -152,12 +152,12 @@ Warning: The following files are tracked and will NOT be encrypted:\nsecret_trac
 #[test]
 fn encrypt_missing_encrypt_file_errors_exit_1() {
     let tb = TestBed::new("enc-missing-file");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
     // .config/yadm/encrypt intentionally never written.
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert_eq!(r.code, 1);
     assert!(
         r.err_contains("does not exist"),
@@ -170,14 +170,14 @@ fn encrypt_missing_encrypt_file_errors_exit_1() {
 #[test]
 fn encrypt_unknown_cipher_errors_exit_1() {
     let tb = TestBed::new("enc-bad-cipher");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     tb.write_home(".config/yadm/encrypt", "secret1\n");
     tb.write_home("secret1", "x\n");
-    let r = tb.radm(&["config", "yadm.cipher", "bogus"]);
+    let r = tb.ryadm(&["config", "yadm.cipher", "bogus"]);
     assert!(r.success());
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert_eq!(r.code, 1);
     assert_eq!(r.stderr, "ERROR: Unknown cipher 'bogus'\n");
 }
@@ -185,7 +185,7 @@ fn encrypt_unknown_cipher_errors_exit_1() {
 #[test]
 fn encrypt_overwrites_existing_archive_silently() {
     let tb = TestBed::new("enc-overwrite");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
     tb.write_home(".config/yadm/encrypt", "secret1\n");
@@ -195,7 +195,7 @@ fn encrypt_overwrites_existing_archive_silently() {
     std::fs::create_dir_all(tb.archive().parent().unwrap()).unwrap();
     std::fs::write(tb.archive(), "not a real archive").unwrap();
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "");
     let content = std::fs::read(tb.archive()).unwrap();
@@ -209,7 +209,7 @@ fn encrypt_overwrites_existing_archive_silently() {
 #[test]
 fn encrypt_updates_info_exclude_managed_block_preserving_unmanaged_prefix() {
     let tb = TestBed::new("enc-exclude-block");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
@@ -220,7 +220,7 @@ fn encrypt_updates_info_exclude_managed_block_preserving_unmanaged_prefix() {
     tb.write_home(".config/yadm/encrypt", "test-encrypt-data\n");
     tb.write_home("test-encrypt-data", "shh\n");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "");
 
@@ -237,7 +237,7 @@ fn encrypt_updates_info_exclude_managed_block_preserving_unmanaged_prefix() {
 #[test]
 fn encrypt_with_auto_exclude_false_suppresses_managed_block() {
     let tb = TestBed::new("enc-auto-exclude-off");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     // `git init` itself always creates a template info/exclude (a handful
     // of commented-out example lines) — capture that baseline so the
@@ -245,13 +245,13 @@ fn encrypt_with_auto_exclude_false_suppresses_managed_block() {
     let baseline_exclude = std::fs::read_to_string(tb.repo().join("info/exclude")).unwrap();
 
     setup_openssl_cipher(&tb);
-    let r = tb.radm(&["config", "yadm.auto-exclude", "false"]);
+    let r = tb.ryadm(&["config", "yadm.auto-exclude", "false"]);
     assert!(r.success());
 
     tb.write_home(".config/yadm/encrypt", "test-encrypt-data\n");
     tb.write_home("test-encrypt-data", "shh\n");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "");
 
@@ -274,7 +274,7 @@ fn encrypt_with_auto_exclude_false_suppresses_managed_block() {
 #[test]
 fn decrypt_restores_file_contents_and_permissions() {
     let tb = TestBed::new("dec-restore");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
     // `encrypt` itself sets CHANGES_POSSIBLE, which auto-triggers `perms`
@@ -283,7 +283,7 @@ fn decrypt_restores_file_contents_and_permissions() {
     // orthogonal to what this test is pinning (tar/cipher round-trip of
     // the mode bits present at encrypt time). Disable the auto-trigger so
     // the source file's mode is left exactly as written.
-    let r = tb.radm(&["config", "yadm.auto-perms", "false"]);
+    let r = tb.ryadm(&["config", "yadm.auto-perms", "false"]);
     assert!(r.success());
 
     tb.write_home(
@@ -294,7 +294,7 @@ fn decrypt_restores_file_contents_and_permissions() {
     tb.write_home("decrypt2", "decrypt2");
     tb.write_home("subdir/decrypt3", "subdir/decrypt3");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(
         tb.mode("decrypt1"),
@@ -307,7 +307,7 @@ fn decrypt_restores_file_contents_and_permissions() {
     std::fs::remove_file(tb.home_path("decrypt2")).unwrap();
     std::fs::remove_dir_all(tb.home_path("subdir")).unwrap();
 
-    let r = tb.radm(&["decrypt"]);
+    let r = tb.ryadm(&["decrypt"]);
     assert!(r.success(), "decrypt failed: {r:?}");
     assert!(r.stdout.contains("All files decrypted."));
 
@@ -320,19 +320,19 @@ fn decrypt_restores_file_contents_and_permissions() {
 #[test]
 fn decrypt_extract_overwrites_existing_files_unconditionally() {
     let tb = TestBed::new("dec-overwrite");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
     tb.write_home(".config/yadm/encrypt", "decrypt1\n");
     tb.write_home("decrypt1", "decrypt1");
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success());
 
     // Overwrite the plaintext with different content before decrypting.
     tb.write_home("decrypt1", "pre-existing file");
 
-    let r = tb.radm(&["decrypt"]);
+    let r = tb.ryadm(&["decrypt"]);
     assert!(r.success(), "decrypt failed: {r:?}");
     assert_eq!(tb.read_home("decrypt1"), "decrypt1");
 }
@@ -340,20 +340,20 @@ fn decrypt_extract_overwrites_existing_files_unconditionally() {
 #[test]
 fn decrypt_list_mode_lists_without_extracting() {
     let tb = TestBed::new("dec-list");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
     tb.write_home(".config/yadm/encrypt", "decrypt1\ndecrypt2\n");
     tb.write_home("decrypt1", "decrypt1");
     tb.write_home("decrypt2", "decrypt2");
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success());
 
     std::fs::remove_file(tb.home_path("decrypt1")).unwrap();
     std::fs::remove_file(tb.home_path("decrypt2")).unwrap();
 
-    let r = tb.radm(&["decrypt", "-l"]);
+    let r = tb.ryadm(&["decrypt", "-l"]);
     assert!(r.success(), "decrypt -l failed: {r:?}");
     // list mode prints no "All files decrypted." trailer.
     assert!(!r.stdout.contains("All files decrypted."));
@@ -368,12 +368,12 @@ fn decrypt_list_mode_lists_without_extracting() {
 #[test]
 fn decrypt_missing_archive_errors_exit_1() {
     let tb = TestBed::new("dec-missing-archive");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
     // archive intentionally never created.
 
-    let r = tb.radm(&["decrypt"]);
+    let r = tb.ryadm(&["decrypt"]);
     assert_eq!(r.code, 1);
     assert!(
         r.err_contains("does not exist"),
@@ -385,19 +385,19 @@ fn decrypt_missing_archive_errors_exit_1() {
 #[test]
 fn decrypt_unknown_cipher_errors_exit_1() {
     let tb = TestBed::new("dec-bad-cipher");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
     tb.write_home(".config/yadm/encrypt", "secret1\n");
     tb.write_home("secret1", "x\n");
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success());
 
     // Switch to a bogus cipher after a valid archive already exists.
-    let r = tb.radm(&["config", "yadm.cipher", "bogus"]);
+    let r = tb.ryadm(&["config", "yadm.cipher", "bogus"]);
     assert!(r.success());
 
-    let r = tb.radm(&["decrypt"]);
+    let r = tb.ryadm(&["decrypt"]);
     assert_eq!(r.code, 1);
     assert_eq!(r.stderr, "ERROR: Unknown cipher 'bogus'\n");
 }
@@ -405,12 +405,12 @@ fn decrypt_unknown_cipher_errors_exit_1() {
 #[test]
 fn decrypt_wrong_passphrase_fails_with_extract_error() {
     let tb = TestBed::new("dec-wrong-pass");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
     tb.write_home(".config/yadm/encrypt", "secret1\n");
     tb.write_home("secret1", "x\n");
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success());
 
     // Reconfigure with a wrapper using a different passphrase: the archive
@@ -419,10 +419,10 @@ fn decrypt_wrong_passphrase_fails_with_extract_error() {
     let wrong_wrapper = "#!/bin/sh\nexec openssl \"$@\" -pass pass:wrong\n";
     tb.write_home_mode(".wrap/openssl-wrong", wrong_wrapper, 0o755);
     let wrapper_path = tb.home_path(".wrap/openssl-wrong").display().to_string();
-    let r = tb.radm(&["config", "yadm.openssl-program", &wrapper_path]);
+    let r = tb.ryadm(&["config", "yadm.openssl-program", &wrapper_path]);
     assert!(r.success());
 
-    let r = tb.radm(&["decrypt"]);
+    let r = tb.ryadm(&["decrypt"]);
     assert_eq!(r.code, 1);
     // The cipher's own stderr (openssl's decrypt-failure diagnostics) is
     // inherited/passed through unchanged, same as real yadm does for
@@ -445,7 +445,7 @@ fn decrypt_wrong_passphrase_fails_with_extract_error() {
 #[test]
 fn encrypt_honors_exclude_bang_patterns() {
     let tb = TestBed::new("enc-exclude-glob");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
@@ -454,7 +454,7 @@ fn encrypt_honors_exclude_bang_patterns() {
     tb.write_home("exclude_file2.ex", "2");
     tb.write_home("exclude_file3.ex3", "3");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "");
     assert!(r.stdout.contains("exclude_file1"));
@@ -469,7 +469,7 @@ fn encrypt_honors_exclude_bang_patterns() {
 #[test]
 fn encrypt_ignores_comments_and_blank_lines() {
     let tb = TestBed::new("enc-comments");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
@@ -479,7 +479,7 @@ fn encrypt_ignores_comments_and_blank_lines() {
     );
     tb.write_home("simple_file", "x");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "");
     let expected = format!(
@@ -492,7 +492,7 @@ fn encrypt_ignores_comments_and_blank_lines() {
 #[test]
 fn encrypt_honors_doublestar_globs() {
     let tb = TestBed::new("enc-doublestar");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
 
@@ -502,7 +502,7 @@ fn encrypt_honors_doublestar_globs() {
     tb.write_home("doublestar/e/f/file3", "3");
     tb.write_home("doublestar/g/h/nomatch", "x");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
     assert_eq!(r.stderr, "");
     assert!(r.stdout.contains("doublestar/a/b/file1"));
@@ -518,7 +518,7 @@ fn encrypt_honors_doublestar_globs() {
 #[test]
 fn openssl_modern_default_uses_pbkdf2_sha512() {
     let tb = TestBed::new("enc-ossl-modern");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     let log_path = tb.home_path("openssl.log").display().to_string();
     setup_openssl_cipher_logging(&tb, &log_path);
@@ -526,7 +526,7 @@ fn openssl_modern_default_uses_pbkdf2_sha512() {
     tb.write_home(".config/yadm/encrypt", "secret1\n");
     tb.write_home("secret1", "x\n");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
 
     let log = std::fs::read_to_string(&log_path).unwrap();
@@ -544,17 +544,17 @@ fn openssl_modern_default_uses_pbkdf2_sha512() {
 #[test]
 fn openssl_old_config_switches_to_md5_no_pbkdf2() {
     let tb = TestBed::new("enc-ossl-old");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     let log_path = tb.home_path("openssl.log").display().to_string();
     setup_openssl_cipher_logging(&tb, &log_path);
-    let r = tb.radm(&["config", "yadm.openssl-old", "true"]);
+    let r = tb.ryadm(&["config", "yadm.openssl-old", "true"]);
     assert!(r.success());
 
     tb.write_home(".config/yadm/encrypt", "secret1\n");
     tb.write_home("secret1", "x\n");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
 
     let log = std::fs::read_to_string(&log_path).unwrap();
@@ -571,20 +571,20 @@ fn openssl_old_archive_round_trips_through_decrypt() {
     // Confirms the legacy -md md5 path is not just argv-shape but actually
     // decryptable: encrypt and decrypt both under yadm.openssl-old=true.
     let tb = TestBed::new("enc-ossl-old-roundtrip");
-    let r = tb.radm(&["init"]);
+    let r = tb.ryadm(&["init"]);
     assert!(r.success());
     setup_openssl_cipher(&tb);
-    let r = tb.radm(&["config", "yadm.openssl-old", "true"]);
+    let r = tb.ryadm(&["config", "yadm.openssl-old", "true"]);
     assert!(r.success());
 
     tb.write_home(".config/yadm/encrypt", "secret1\n");
     tb.write_home("secret1", "legacy content\n");
 
-    let r = tb.radm(&["encrypt"]);
+    let r = tb.ryadm(&["encrypt"]);
     assert!(r.success(), "encrypt failed: {r:?}");
 
     std::fs::remove_file(tb.home_path("secret1")).unwrap();
-    let r = tb.radm(&["decrypt"]);
+    let r = tb.ryadm(&["decrypt"]);
     assert!(r.success(), "decrypt failed: {r:?}");
     assert_eq!(tb.read_home("secret1"), "legacy content\n");
 }

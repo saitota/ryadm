@@ -1,11 +1,11 @@
 [package]
-name = "radm"
+name = "ryadm"
 version = "1.0.0"
 edition = "2021"
 rust-version = "1.74"
 description = "Rust (Yet) Another Dotfiles Manager — a drop-in replacement for yadm"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/saitota/radm"
+repository = "https://github.com/saitota/ryadm"
 readme = "README.md"
 keywords = ["dotfiles", "yadm", "git"]
 categories = ["command-line-utilities"]

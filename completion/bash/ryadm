@@ -8,7 +8,7 @@ fi
 # only operate if git completion is present
 if declare -F _git >/dev/null || declare -F __git_wrap__git_main >/dev/null; then
 
-  _radm() {
+  _ryadm() {
 
     local current=${COMP_WORDS[COMP_CWORD]}
     local penultimate
@@ -21,7 +21,7 @@ if declare -F _git >/dev/null || declare -F __git_wrap__git_main >/dev/null; the
     fi
 
     local -x GIT_DIR
-    GIT_DIR="$(radm introspect repo 2>/dev/null)"
+    GIT_DIR="$(ryadm introspect repo 2>/dev/null)"
 
     case "$penultimate" in
       bootstrap)
@@ -29,7 +29,7 @@ if declare -F _git >/dev/null || declare -F __git_wrap__git_main >/dev/null; the
         return 0
         ;;
       config)
-        COMPREPLY=($(compgen -W "$(radm introspect configs 2>/dev/null)"))
+        COMPREPLY=($(compgen -W "$(ryadm introspect configs 2>/dev/null)"))
         return 0
         ;;
       decrypt)
@@ -61,7 +61,7 @@ if declare -F _git >/dev/null || declare -F __git_wrap__git_main >/dev/null; the
         ;;
     esac
 
-    local yadm_switches=($(radm introspect switches 2>/dev/null))
+    local yadm_switches=($(ryadm introspect switches 2>/dev/null))
 
     # this condition is so files are completed properly for --yadm-xxx options
     if [[ " ${yadm_switches[*]} " != *" $penultimate "* ]]; then
@@ -90,11 +90,11 @@ if declare -F _git >/dev/null || declare -F __git_wrap__git_main >/dev/null; the
       fi
     done
     if [[ "$COMP_CWORD" = "$command_idx" ]]; then
-      __gitcompappend "$(radm introspect commands 2>/dev/null)" "" "$current" " "
+      __gitcompappend "$(ryadm introspect commands 2>/dev/null)" "" "$current" " "
     fi
   }
 
-  complete -o bashdefault -o default -o nospace -F _radm radm 2>/dev/null ||
-    complete -o default -o nospace -F _radm radm
+  complete -o bashdefault -o default -o nospace -F _ryadm ryadm 2>/dev/null ||
+    complete -o default -o nospace -F _ryadm ryadm
 
 fi

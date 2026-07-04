@@ -1,9 +1,9 @@
 //! Differential compatibility tests: run identical scenarios against the
-//! original bash yadm (RADM_COMPAT_YADM=<path to script>) and radm, then
+//! original bash yadm (RYADM_COMPAT_YADM=<path to script>) and ryadm, then
 //! compare every command's stdout/stderr/exit code and the resulting
 //! filesystem state byte-for-byte (after normalizing testbed roots).
 //!
-//! Without RADM_COMPAT_YADM in the environment these tests are skipped, so a
+//! Without RYADM_COMPAT_YADM in the environment these tests are skipped, so a
 //! plain `cargo test` works everywhere; `task test:compat` extracts the
 //! pinned reference script and runs them.
 
@@ -39,7 +39,7 @@ fn run_step(args: &[&str]) -> Step {
 }
 
 fn yadm_ref() -> Option<String> {
-    std::env::var("RADM_COMPAT_YADM")
+    std::env::var("RYADM_COMPAT_YADM")
         .ok()
         .filter(|v| !v.is_empty())
 }
@@ -56,14 +56,14 @@ fn normalize(input: &str, tb: &TestBed) -> String {
     let root = tb.root.to_string_lossy().into_owned();
     let mut out = input.replace(&root, "$ROOT");
     // `version` intentionally differs in its first line:
-    // yadm prints "bash version ...", radm prints "radm version ...".
+    // yadm prints "bash version ...", ryadm prints "ryadm version ...".
     let mut lines: Vec<String> = out.split('\n').map(|l| l.to_string()).collect();
     for l in &mut lines {
-        if l.starts_with("bash version ") || l.starts_with("radm version ") {
+        if l.starts_with("bash version ") || l.starts_with("ryadm version ") {
             *l = "<impl> version".to_string();
         }
     }
-    // bash prints its own read error when /dev/tty is unavailable; radm just
+    // bash prints its own read error when /dev/tty is unavailable; ryadm just
     // silently gets no answer (same visible behavior otherwise).
     lines.retain(|l| !l.ends_with(": /dev/tty: Device not configured"));
     out = lines.join("\n");
@@ -87,7 +87,7 @@ fn execute(
             c.arg(script);
             c
         }
-        None => Command::new(TestBed::radm_bin()),
+        None => Command::new(TestBed::ryadm_bin()),
     };
     tb.apply_env(&mut c);
     if let Some((k, v)) = extra {
@@ -100,7 +100,7 @@ fn execute(
 }
 
 fn run_side(name: &str, steps: &[Step], yadm: Option<&str>) -> SideResult {
-    let side = if yadm.is_some() { "yadm" } else { "radm" };
+    let side = if yadm.is_some() { "yadm" } else { "ryadm" };
     let tb = TestBed::new(&format!("compat-{name}-{side}"));
     let mut records: Vec<String> = Vec::new();
 
@@ -261,7 +261,7 @@ fn mode_of(meta: &std::fs::Metadata) -> u32 {
 /// Run the scenario against both implementations and compare everything.
 fn compat_check(name: &str, steps: Vec<Step>) {
     let Some(yadm) = yadm_ref() else {
-        eprintln!("compat[{name}]: skipped (RADM_COMPAT_YADM not set)");
+        eprintln!("compat[{name}]: skipped (RYADM_COMPAT_YADM not set)");
         return;
     };
     let y = run_side(name, &steps, Some(&yadm));
@@ -275,7 +275,7 @@ fn compat_check(name: &str, steps: Vec<Step>) {
     for (i, (yr, rr)) in y.records.iter().zip(r.records.iter()).enumerate() {
         assert_eq!(
             yr, rr,
-            "compat[{name}]: step {i} differs\n===== yadm =====\n{yr}\n===== radm =====\n{rr}\n"
+            "compat[{name}]: step {i} differs\n===== yadm =====\n{yr}\n===== ryadm =====\n{rr}\n"
         );
     }
     assert_eq!(
