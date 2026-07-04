@@ -137,7 +137,7 @@ pub fn upgrade(ctx: &mut Context) -> ! {
     ];
     let hooks_dir = format!("{}/hooks", ctx.legacy_dir);
     for prefix in ["pre_", "post_"] {
-        legacy_paths.extend(glob_prefix(&hooks_dir, prefix));
+        legacy_paths.extend(util::glob_prefix(&hooks_dir, prefix));
     }
 
     for legacy_path in &legacy_paths {
@@ -201,71 +201,3 @@ fn git_mv(ctx: &Context, from: &str, to: &str) -> bool {
     c.status().map(|s| s.success()).unwrap_or(false)
 }
 
-/// Expand a `dir/prefix*` glob: sorted matches (bash's own glob sort order).
-fn glob_prefix(dir: &str, prefix: &str) -> Vec<String> {
-    let mut matches: Vec<String> = match std::fs::read_dir(dir) {
-        Ok(entries) => entries
-            .filter_map(|e| e.ok())
-            .filter_map(|e| e.file_name().into_string().ok())
-            .filter(|name| name.starts_with(prefix) && name.len() > prefix.len())
-            .map(|name| format!("{dir}/{name}"))
-            .collect(),
-        Err(_) => Vec::new(),
-    };
-    matches.sort();
-    matches
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::Mutex;
-
-    // serialize: Context::new reads process-global env
-    static LOCK: Mutex<()> = Mutex::new(());
-
-    fn tmp_home() -> String {
-        let _guard = LOCK.lock().unwrap();
-        let dir = std::env::temp_dir().join(format!(
-            "radm-upgrade-test-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        dir.to_string_lossy().into_owned()
-    }
-
-    #[test]
-    fn glob_prefix_sorted_and_filters_bare_prefix() {
-        let home = tmp_home();
-        let hooks = format!("{home}/hooks");
-        std::fs::create_dir_all(&hooks).unwrap();
-        std::fs::write(format!("{hooks}/pre_status"), "status").unwrap();
-        std::fs::write(format!("{hooks}/pre_commit"), "commit").unwrap();
-        std::fs::write(format!("{hooks}/pre_"), "bare").unwrap(); // no suffix: excluded
-        std::fs::write(format!("{hooks}/post_commit"), "commit").unwrap();
-
-        let mut pre = glob_prefix(&hooks, "pre_");
-        pre.sort();
-        assert_eq!(
-            pre,
-            vec![format!("{hooks}/pre_commit"), format!("{hooks}/pre_status"),]
-        );
-
-        let post = glob_prefix(&hooks, "post_");
-        assert_eq!(post, vec![format!("{hooks}/post_commit")]);
-
-        let _ = std::fs::remove_dir_all(&home);
-    }
-
-    #[test]
-    fn glob_prefix_missing_dir_is_empty() {
-        let home = tmp_home();
-        let hooks = format!("{home}/hooks-does-not-exist");
-        assert!(glob_prefix(&hooks, "pre_").is_empty());
-        let _ = std::fs::remove_dir_all(&home);
-    }
-}

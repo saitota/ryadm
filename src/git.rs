@@ -10,6 +10,21 @@ use crate::privdirs;
 use crate::util;
 
 /// Build a git command (GIT_DIR is inherited from the process environment).
+///
+/// radm deliberately uses process-global state to mirror bash/yadm byte-for-
+/// byte: `GIT_DIR` (set in `paths::configure_paths`, swapped in `cmd/upgrade`,
+/// cleared in `cmd/misc::bootstrap`) and the process CWD (via `paths::cd_work`)
+/// steer every git child and much of alt/encrypt/perms/list. The dependency is
+/// implicit — it appears in neither this signature nor the callers'. Two
+/// consequences worth knowing before changing anything here:
+///
+/// * behaviour depends on *when* GIT_DIR/CWD were last mutated, not just on
+///   the arguments passed;
+/// * tests that touch this state must serialize (see `encrypt`'s `ENV_LOCK`)
+///   and scrub inherited `GIT_DIR` (see `encrypt`'s `git_init`).
+///
+/// This is an intentional trade for byte compatibility, not an oversight;
+/// removing it would require re-validating the whole compatibility suite.
 pub fn cmd(ctx: &Context) -> Command {
     Command::new(&ctx.git_program)
 }

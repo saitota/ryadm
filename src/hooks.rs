@@ -9,6 +9,11 @@ use crate::util;
 
 /// Bash helper functions yadm `export -f`s to hooks. radm exports them in the
 /// modern bash env encoding so bash hooks keep working.
+///
+/// These are hand-ported duplicates of the Rust implementations in `paths.rs`
+/// (`builtin_dirname` / `relative_path` / `unix_path` / `mixed_path`). When
+/// changing yadm's path semantics, update both this table and `paths.rs` so
+/// hooks and the internal path resolver do not diverge.
 const EXPORTED_FUNCTIONS: &[(&str, &str)] = &[
     (
         "builtin_dirname",
