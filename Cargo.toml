@@ -1,0 +1,20 @@
+[package]
+name = "radm"
+version = "3.5.0"
+edition = "2021"
+rust-version = "1.74"
+description = "Rust (Yet) Another Dotfiles Manager — a drop-in replacement for yadm"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/saitota/radm"
+readme = "README.md"
+keywords = ["dotfiles", "yadm", "git"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+
+[dev-dependencies]
+libc = "0.2"
+
+[profile.release]
+lto = true
+strip = true
