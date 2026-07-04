@@ -9,33 +9,30 @@ bash/awk quirks.
 
 ## Features
 
-* Based on [Git][], with its full feature set
-* System-specific [alternate][feature-alternates] and [templated][feature-templates] files
-* [Encryption][feature-encryption] via [GnuPG][], [OpenSSL][], [transcrypt][], or [git-crypt][]
-* [Bootstrapping][feature-bootstrap] and [hooks][feature-hooks]
+* Git-based, with its full feature set
+* System-specific alternate and templated files
+* Encryption via GnuPG, OpenSSL, transcrypt, or git-crypt
+* Bootstrapping and hooks
 
 radm implements yadm's interface, so [yadm's docs][website-link] apply directly.
 
-## Compatibility
-
-radm targets byte-identical behavior with yadm 3.5.0: same paths
-(`$XDG_CONFIG_HOME/yadm`, `$XDG_DATA_HOME/yadm`), config keys (`yadm.*`,
-`local.*`), hook variables, template syntax, and per-command stdout/stderr/exit
-codes. Output still says "yadm" so existing scripts keep working. An existing
-yadm setup works with radm immediately — no migration.
-
-The only difference: `radm version` prints a `radm version 1.0.0` line so you
-can tell which binary you're running; the `yadm version 3.5.0` line is preserved.
-
 ## Install
 
-Needs a Rust toolchain (edition 2021, Rust 1.74+).
+Prebuilt binary (macOS arm64) — fetch the latest release and install to
+`~/.local/bin` in one go (needs [`gh`][gh]):
+
+```sh
+mkdir -p ~/.local/bin && gh release download --repo saitota/radm \
+  --pattern '*aarch64-apple-darwin.tar.gz' -O - | tar xz -C ~/.local/bin radm
+```
+
+Or build from source (needs a Rust toolchain, edition 2021, Rust 1.74+):
 
 ```sh
 cargo install --path .   # or: task install
 ```
 
-Prebuilt macOS arm64 binaries are on the [releases page][releases-link].
+(No releases are published yet; build from source for now.)
 
 ## Quick tour
 
@@ -48,23 +45,36 @@ Prebuilt macOS arm64 binaries are on the [releases page][releases-link].
     radm add path/file.cfg##os.Linux  # per-OS alternates
     radm add path/file.cfg##os.Darwin
 
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `init [-f]` | Initialize an empty repository |
+| `clone <url> [-f]` | Clone an existing repository |
+| `config <name> <value>` | Configure a setting |
+| `list [-a]` | List tracked files |
+| `alt` | Create links for alternates |
+| `bootstrap` | Execute `$HOME/.config/yadm/bootstrap` |
+| `encrypt` / `decrypt [-l]` | Encrypt / decrypt files |
+| `perms` | Fix perms for private files |
+| `enter [COMMAND]` | Run a sub-shell with GIT variables set |
+| `git-crypt [OPTIONS]` | Run git-crypt against the repo |
+| `transcrypt [OPTIONS]` | Run transcrypt against the repo |
+| `version` / `help` | Print version / usage |
+
+Any Git command or alias also works as a `<command>`, operating on radm's repo
+and the work tree (usually `$HOME`).
+
+Global options (before the command) override paths for one invocation:
+`-Y`/`--yadm-dir`, `--yadm-data`, `--yadm-repo`, `--yadm-config`,
+`--yadm-encrypt`, `--yadm-archive`, `--yadm-bootstrap`.
+
 ## Development
 
-Everything goes through [Task][]; run `task` to list all tasks.
-
-| Task | Description |
-|------|-------------|
-| `task build` / `build:release` | Build debug / release binary |
-| `task fmt` / `fmt:check` | Format / check formatting |
-| `task lint` | clippy with warnings denied |
-| `task test` | Unit and integration tests |
-| `task test:compat` | Differential tests against the original bash yadm |
-| `task ci` | Everything CI runs |
-| `task install` / `release` | Install / publish a release |
-
-`task test:compat` runs identical scenarios against radm and the original bash
-yadm (pinned at `bbb58e6`, extracted from git history), diffing stdout, stderr,
-exit codes, and filesystem state. Plain `cargo test` skips it.
+Everything goes through [Task][]; run `task` to list all tasks. `task ci` runs
+what CI runs; `task test:compat` diffs radm against the original bash yadm
+(pinned in git history), asserting identical stdout, stderr, exit codes, and
+filesystem state.
 
 ## Platform support
 
@@ -74,23 +84,14 @@ should work (radm has zero runtime Rust deps and shells out to `git`,
 
 ## License & attribution
 
-[GPL-3.0-or-later][license-link], same as yadm. A derivative work of [yadm][],
-copyright (C) 2015-2024 Tim Byrne, (C) 2025 Erik Flodin. If you use radm,
-consider starring yadm too.
+radm is a derivative work of [yadm][] and is distributed under the same license,
+[GPL-3.0-or-later][license-link]. Original yadm copyright (C) 2015-2024 Tim
+Byrne, (C) 2025 Erik Flodin.
 
-[Git]: https://git-scm.com/
-[GnuPG]: https://gnupg.org/
-[OpenSSL]: https://www.openssl.org/
 [Task]: https://taskfile.dev/
-[feature-alternates]: https://yadm.io/docs/alternates
-[feature-bootstrap]: https://yadm.io/docs/bootstrap
-[feature-hooks]: https://yadm.io/docs/hooks
-[feature-encryption]: https://yadm.io/docs/encryption
-[feature-templates]: https://yadm.io/docs/templates
-[git-crypt]: https://github.com/AGWA/git-crypt
+[gh]: https://cli.github.com/
 [license-badge]: https://img.shields.io/badge/license-GPL--3.0--or--later-blue
 [license-link]: https://github.com/saitota/radm/blob/main/LICENSE
-[releases-link]: https://github.com/saitota/radm/releases
-[transcrypt]: https://github.com/elasticdog/transcrypt
 [website-link]: https://yadm.io/
+[yadm]: https://github.com/yadm-dev/yadm
 [yadm]: https://github.com/yadm-dev/yadm
