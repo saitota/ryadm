@@ -1,9 +1,9 @@
 # ⚡️ ryadm - Rust Yet Another Dotfiles Manager
 
-**ryadm** is a byte-compatible Rust rewrite of [yadm][] 3.5.0. It's a drop-in
-replacement: same commands, options, exit codes, output, and config files — a
-native binary instead of a bash script, for faster startup and no cross-platform
-bash/awk quirks.
+**ryadm** is a byte-compatible Rust rewrite of [yadm][] 3.5.0 — a drop-in
+replacement with the same commands, options, exit codes, output, and config
+files, as a native binary instead of a bash script. ⚡️ ~50% faster, same
+bytes out.
 
 [![License][license-badge]][license-link]
 

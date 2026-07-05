@@ -26,12 +26,24 @@ use crate::util;
 /// This is an intentional trade for byte compatibility, not an oversight;
 /// removing it would require re-validating the whole compatibility suite.
 pub fn cmd(ctx: &Context) -> Command {
-    Command::new(&ctx.git_program)
+    Command::new(git_exe(ctx))
+}
+
+/// The program to spawn git with: the absolute path resolved by `require_git`,
+/// else the verbatim `git_program`. Same file either way — an absolute path
+/// just lets `Command` skip the per-call PATH re-scan.
+pub fn git_exe(ctx: &Context) -> &str {
+    if ctx.git_program_resolved.is_empty() {
+        &ctx.git_program
+    } else {
+        &ctx.git_program_resolved
+    }
 }
 
 /// Run git with the given args, capture stdout ($(...) semantics), return
 /// (stdout, success). stderr goes to the given destination.
 pub fn capture(ctx: &Context, args: &[&str], silence_stderr: bool) -> (String, bool) {
+    util::record_spawn(&ctx.git_program, args);
     let mut c = cmd(ctx);
     c.args(args);
     if silence_stderr {
@@ -50,6 +62,7 @@ pub fn capture(ctx: &Context, args: &[&str], silence_stderr: bool) -> (String, b
 
 /// Run git with the given args, stdio inherited; return the exit code.
 pub fn run(ctx: &Context, args: &[&str]) -> i32 {
+    util::record_spawn(&ctx.git_program, args);
     exit_code(cmd(ctx).args(args).status())
 }
 
@@ -77,14 +90,19 @@ pub fn require_git(ctx: &mut Context) {
         ctx.git_program = alt_git;
         more_info = "\\nThis command has been set via the yadm.git-program configuration.";
     }
-    if !util::command_exists(&ctx.git_program) {
-        util::error_out(
-            ctx,
-            &format!(
-                "This functionality requires Git to be installed, but the command '{}' cannot be located.{}",
-                ctx.git_program, more_info
-            ),
-        );
+    // Resolve git's absolute path once so later spawns skip re-scanning PATH.
+    // Error text below still uses the verbatim git_program.
+    match util::command_path(&ctx.git_program) {
+        Some(path) => ctx.git_program_resolved = path,
+        None => {
+            util::error_out(
+                ctx,
+                &format!(
+                    "This functionality requires Git to be installed, but the command '{}' cannot be located.{}",
+                    ctx.git_program, more_info
+                ),
+            );
+        }
     }
 }
 
@@ -114,7 +132,13 @@ pub fn git_command(ctx: &mut Context, args: &[String]) -> i32 {
         ctx,
         &format!("Running git command {} {}", ctx.git_program, args.join(" ")),
     );
-    exit_code(cmd(ctx).args(&args).status())
+    let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    util::record_spawn(&ctx.git_program, &arg_refs);
+    let code = exit_code(cmd(ctx).args(&args).status());
+    // A passthrough (e.g. `yadm gitconfig ...`) may have changed config; clear
+    // memoized reads before auto_alt/auto_perms run.
+    ctx.invalidate_config_cache();
+    code
 }
 
 pub fn configure_repo(ctx: &mut Context) {

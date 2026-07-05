@@ -7,6 +7,26 @@ use std::path::Path;
 use crate::context::Context;
 use crate::hooks;
 
+/// When `RYADM_SPAWN_LOG` names a file, append one line per spawn
+/// (`program\0arg...`) for the spawn-count regression tests. No-op otherwise.
+pub fn record_spawn(program: &str, args: &[&str]) {
+    if let Ok(path) = std::env::var("RYADM_SPAWN_LOG") {
+        use std::io::Write;
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+        {
+            let mut line = String::from(program);
+            for a in args {
+                line.push('\0');
+                line.push_str(a);
+            }
+            let _ = writeln!(f, "{line}");
+        }
+    }
+}
+
 /// Interpret backslash escapes like `printf '%b'` does (yadm's echo_e).
 pub fn expand_escapes(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
