@@ -7,6 +7,29 @@ use std::path::Path;
 use crate::context::Context;
 use crate::hooks;
 
+/// Test/diagnostics hook: when `RYADM_SPAWN_LOG` names a file, append one line
+/// per external process spawn (`program\0arg\0arg...`). Used by the spawn-count
+/// regression tests to observe how many child processes a command launches.
+/// No-op in normal operation (the env var is unset), so it never affects
+/// byte-compatible behaviour.
+pub fn record_spawn(program: &str, args: &[&str]) {
+    if let Ok(path) = std::env::var("RYADM_SPAWN_LOG") {
+        use std::io::Write;
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+        {
+            let mut line = String::from(program);
+            for a in args {
+                line.push('\0');
+                line.push_str(a);
+            }
+            let _ = writeln!(f, "{line}");
+        }
+    }
+}
+
 /// Interpret backslash escapes like `printf '%b'` does (yadm's echo_e).
 pub fn expand_escapes(s: &str) -> String {
     let mut out = String::with_capacity(s.len());

@@ -44,6 +44,14 @@ pub struct Context {
 
     // External programs.
     pub git_program: String,
+    /// Absolute path `git_program` resolves to on `PATH`, cached by
+    /// `require_git`. Used only for spawning git; every user-visible mention of
+    /// git still uses `git_program` verbatim, so error text stays byte-identical
+    /// to yadm. Empty until resolved (spawn then falls back to `git_program`).
+    /// The win: `std::process::Command` re-scans `PATH` on every spawn when the
+    /// program has no `/`; a large `PATH` makes that measurably expensive, and
+    /// yadm shells out to git many times per invocation.
+    pub git_program_resolved: String,
     pub gpg_program: String,
     pub openssl_program: String,
     /// Candidate list; set_awk() narrows it to the first available.
@@ -80,6 +88,14 @@ pub struct Context {
     pub no_encrypt_tracked_files: Vec<String>,
     pub invalid_alt: Vec<String>,
     pub legacy_warning_issued: bool,
+
+    /// Memoizes the `$(config ...)` reads that `config_output` performs, so a
+    /// single ryadm invocation does not spawn `git config` twice for the same
+    /// key. Reads-only: the `config` command invalidates this via
+    /// `invalidate_config_cache` whenever it may write. Keyed by the exact
+    /// (scope, args) tuple; the value is git's captured stdout. Wrapped in a
+    /// `RefCell` because `config_output` takes `&Context`.
+    pub config_cache: std::cell::RefCell<std::collections::HashMap<String, String>>,
 }
 
 impl Context {
@@ -114,6 +130,7 @@ impl Context {
             override_archive: String::new(),
             override_bootstrap: String::new(),
             git_program: "git".into(),
+            git_program_resolved: String::new(),
             gpg_program: "gpg".into(),
             openssl_program: "openssl".into(),
             awk_program: vec!["gawk".into(), "awk".into()],
@@ -140,6 +157,14 @@ impl Context {
             no_encrypt_tracked_files: Vec::new(),
             invalid_alt: Vec::new(),
             legacy_warning_issued: false,
+            config_cache: std::cell::RefCell::new(std::collections::HashMap::new()),
         }
+    }
+
+    /// Drop every memoized `config_output` read. Called before/after operations
+    /// that may change configuration (the `config` command) so a subsequent
+    /// read never returns a stale value.
+    pub fn invalidate_config_cache(&self) {
+        self.config_cache.borrow_mut().clear();
     }
 }
