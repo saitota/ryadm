@@ -530,7 +530,9 @@ fn alt_exclude_status_flag_false_is_untracked_not_ignored() {
     let tb = TestBed::new("alt-exclude-status-false");
     assert!(tb.ryadm(&["init"]).success());
     assert!(tb.ryadm(&["config", "yadm.auto-alt", "false"]).success());
-    assert!(tb.ryadm(&["config", "yadm.auto-exclude", "false"]).success());
+    assert!(tb
+        .ryadm(&["config", "yadm.auto-exclude", "false"])
+        .success());
 
     tb.write_home("f1##default", "content\n");
     assert!(tb.ryadm(&["add", "f1##default"]).success());
@@ -660,7 +662,9 @@ fn local_hostname_override_affects_selection() {
     let tb = TestBed::new("alt-local-hostname-override");
     assert!(tb.ryadm(&["init"]).success());
     assert!(tb.ryadm(&["config", "yadm.auto-alt", "false"]).success());
-    assert!(tb.ryadm(&["config", "local.hostname", "fakehost"]).success());
+    assert!(tb
+        .ryadm(&["config", "local.hostname", "fakehost"])
+        .success());
 
     tb.write_home("f1##hostname.fakehost", "content\n");
     assert!(tb.ryadm(&["add", "f1##hostname.fakehost"]).success());
@@ -765,7 +769,9 @@ fn stale_link_removed_when_class_no_longer_matches() {
     assert!(tb.ryadm(&["alt"]).success());
     assert!(tb.is_symlink("stale"));
 
-    assert!(tb.ryadm(&["config", "--unset-all", "local.class"]).success());
+    assert!(tb
+        .ryadm(&["config", "--unset-all", "local.class"])
+        .success());
     assert!(tb
         .ryadm(&["config", "--add", "local.class", "somethingelse"])
         .success());
