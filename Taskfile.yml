@@ -64,7 +64,7 @@ tasks:
     cmds:
       - cargo install --path . --locked
 
-  tmp-version-bump:
+  version-bump:
     desc: 'Open a PR bumping Cargo.toml to the next patch (or VERSION=1.2.0). Merge it, then run `task release`.'
     preconditions:
       - sh: git diff --quiet && git diff --cached --quiet
@@ -91,7 +91,7 @@ tasks:
       - git switch main
 
   release:
-    desc: 'From main, publish the Cargo.toml version to crates.io and cut the matching GitHub release. Bump first with `task tmp-version-bump`.'
+    desc: 'From main, publish the Cargo.toml version to crates.io and cut the matching GitHub release. Bump first with `task version-bump`.'
     vars:
       VERSION:
         sh: sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1
@@ -102,7 +102,7 @@ tasks:
       - sh: '[ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]'
         msg: 'Run release from an up-to-date main (merge the version bump PR first)'
       - sh: '! gh release view {{.TAG}} --repo {{.REPO}} >/dev/null 2>&1'
-        msg: 'Release {{.TAG}} already exists; run `task tmp-version-bump` to bump first'
+        msg: 'Release {{.TAG}} already exists; run `task version-bump` to bump first'
     cmds:
       - RYADM_VERSION={{.TAG}} cargo build --release
       - '[ "$(./target/release/ryadm version | head -1)" = "ryadm version {{.VERSION}}" ]'
