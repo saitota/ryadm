@@ -5,6 +5,8 @@ replacement: same commands, options, exit codes, output, and config files — a
 native binary instead of a bash script, for faster startup and no cross-platform
 bash/awk quirks.
 
+⚡️ **~50% faster** — same bytes out, less time spent.
+
 [![License][license-badge]][license-link]
 
 ## Features
