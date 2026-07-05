@@ -1,6 +1,6 @@
 [package]
 name = "ryadm"
-version = "1.0.5"
+version = "1.0.6"
 edition = "2021"
 rust-version = "1.74"
 description = "⚡️ ryadm - Rust Yet Another Dotfiles Manager — a drop-in replacement for yadm"
