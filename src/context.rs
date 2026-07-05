@@ -4,8 +4,6 @@
 //! paths with plain string operations (prefix/suffix stripping, concatenation)
 //! and byte-for-byte compatible behavior requires the same semantics.
 
-/// The yadm interface version ryadm implements (yadm 3.5.0).
-pub const VERSION: &str = "3.5.0";
 /// ryadm's own version, from the Git release tag at build time (see build.rs),
 /// falling back to the Cargo.toml version for plain `cargo build`.
 pub const RYADM_VERSION: &str = env!("RYADM_VERSION");

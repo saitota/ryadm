@@ -55,14 +55,17 @@ fn subst(input: &str, tb: &TestBed) -> String {
 fn normalize(input: &str, tb: &TestBed) -> String {
     let root = tb.root.to_string_lossy().into_owned();
     let mut out = input.replace(&root, "$ROOT");
-    // `version` intentionally differs in its first line:
-    // yadm prints "bash version ...", ryadm prints "ryadm version ...".
+    // `version` intentionally differs from yadm: yadm prints "bash version ..."
+    // then a trailing "yadm version 3.5.0"; ryadm prints "ryadm version ..." and
+    // drops the yadm interface line entirely. Fold the first line and drop the
+    // yadm line so the shared part (the git version) is what's compared.
     let mut lines: Vec<String> = out.split('\n').map(|l| l.to_string()).collect();
     for l in &mut lines {
         if l.starts_with("bash version ") || l.starts_with("ryadm version ") {
             *l = "<impl> version".to_string();
         }
     }
+    lines.retain(|l| !l.starts_with("yadm version "));
     // bash prints its own read error when /dev/tty is unavailable; ryadm just
     // silently gets no answer (same visible behavior otherwise).
     lines.retain(|l| !l.ends_with(": /dev/tty: Device not configured"));

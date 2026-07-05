@@ -8,7 +8,7 @@ Name is `ryadm` (renamed from `radm`; don't call it `radm`).
 
 ## Compatibility
 
-Never break the yadm-compatible interface: config dir `~/.config/yadm`, env vars `YADM_*`, config keys `yadm.*`, CLI flags `--yadm-*`, and `yadm version 3.5.0` output stay unchanged. Any runtime-behavior change must be covered by the diff-compat test.
+Never break the yadm-compatible interface: config dir `~/.config/yadm`, env vars `YADM_*`, config keys `yadm.*`, and CLI flags `--yadm-*` stay unchanged. Any runtime-behavior change must be covered by the diff-compat test. (Exception: `version` deliberately drops yadm's `bash version` / `yadm version 3.5.0` lines in favour of `ryadm version`.)
 
 ## Repo
 

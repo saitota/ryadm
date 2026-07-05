@@ -5,7 +5,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::config;
-use crate::context::{Context, RYADM_VERSION, VERSION};
+use crate::context::{Context, RYADM_VERSION};
 use crate::encrypt;
 use crate::git;
 use crate::hooks;
@@ -321,6 +321,5 @@ pub fn version(ctx: &Context) -> ! {
     print!(" ");
     let _ = std::io::stdout().flush();
     let _ = git::cmd(ctx).arg("--version").status();
-    println!("yadm version {VERSION}");
     hooks::exit_with_hook(ctx, 0)
 }

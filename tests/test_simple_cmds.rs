@@ -274,7 +274,9 @@ fn version_command_shape_and_exit_0() {
         "second line must start with a leading space"
     );
     assert!(r.out_contains("git version"));
-    assert!(r.stdout.contains("\nyadm version "));
+    // ryadm drops yadm's "yadm version 3.5.0" line (note: "ryadm version" is
+    // fine — we only reject a line that *begins* with "yadm version").
+    assert!(!r.stdout.lines().any(|l| l.starts_with("yadm version ")));
 }
 
 #[test]
@@ -285,7 +287,7 @@ fn version_via_double_dash_version_same_shape() {
     assert_eq!(r.stderr, "");
     assert!(r.stdout.starts_with("ryadm version "));
     assert!(r.out_contains("git version"));
-    assert!(r.stdout.contains("\nyadm version "));
+    assert!(!r.stdout.lines().any(|l| l.starts_with("yadm version ")));
 }
 
 // ---------------------------------------------------------------------
