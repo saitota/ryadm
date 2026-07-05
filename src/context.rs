@@ -44,13 +44,9 @@ pub struct Context {
 
     // External programs.
     pub git_program: String,
-    /// Absolute path `git_program` resolves to on `PATH`, cached by
-    /// `require_git`. Used only for spawning git; every user-visible mention of
-    /// git still uses `git_program` verbatim, so error text stays byte-identical
-    /// to yadm. Empty until resolved (spawn then falls back to `git_program`).
-    /// The win: `std::process::Command` re-scans `PATH` on every spawn when the
-    /// program has no `/`; a large `PATH` makes that measurably expensive, and
-    /// yadm shells out to git many times per invocation.
+    /// Absolute path `git_program` resolves to, cached by `require_git` for
+    /// spawning only. Empty until resolved; `git_exe` then falls back to
+    /// `git_program`. Avoids `Command` re-scanning a large `PATH` per spawn.
     pub git_program_resolved: String,
     pub gpg_program: String,
     pub openssl_program: String,
@@ -89,12 +85,10 @@ pub struct Context {
     pub invalid_alt: Vec<String>,
     pub legacy_warning_issued: bool,
 
-    /// Memoizes the `$(config ...)` reads that `config_output` performs, so a
-    /// single ryadm invocation does not spawn `git config` twice for the same
-    /// key. Reads-only: the `config` command invalidates this via
-    /// `invalidate_config_cache` whenever it may write. Keyed by the exact
-    /// (scope, args) tuple; the value is git's captured stdout. Wrapped in a
-    /// `RefCell` because `config_output` takes `&Context`.
+    /// Memoizes `config_output` reads so one invocation never spawns `git
+    /// config` twice for the same key. Writes clear it via
+    /// `invalidate_config_cache`. `RefCell` because `config_output` takes
+    /// `&Context`.
     pub config_cache: std::cell::RefCell<std::collections::HashMap<String, String>>,
 }
 

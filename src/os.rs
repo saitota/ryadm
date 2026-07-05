@@ -9,16 +9,13 @@ use crate::context::Context;
 use crate::util;
 
 thread_local! {
-    /// Per-process cache of `command name -> absolute path` for the small,
-    /// unchanging helper programs `capture` spawns (uname, id, ...). Spawning
-    /// the resolved absolute path lets `Command` skip a PATH re-scan each call;
-    /// with a large PATH and several uname/id calls per run this is noticeable.
-    /// It resolves the *same* file `PATH` lookup would, so output is unchanged.
+    /// Cache of `command name -> absolute path` for the helper programs
+    /// `capture` spawns (uname, id, ...), so `Command` skips a PATH re-scan per
+    /// call. Same file PATH would find, so output is unchanged.
     static EXE_PATHS: RefCell<HashMap<String, Option<String>>> = RefCell::new(HashMap::new());
 }
 
-/// Resolve `cmd` to an absolute path (cached), falling back to `cmd` verbatim
-/// when it can't be located — matching the previous PATH-based spawn behaviour.
+/// Resolve `cmd` to an absolute path (cached), falling back to `cmd` verbatim.
 fn resolve_exe(cmd: &str) -> String {
     if cmd.contains('/') {
         return cmd.to_string();

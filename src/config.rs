@@ -77,9 +77,8 @@ pub fn is_local_option(s: &str) -> bool {
 pub fn config_output(ctx: &Context, args: &[&str]) -> String {
     let use_repo_config = args.iter().any(|a| is_local_option(a));
 
-    // Cache key distinguishes the repo-config scope from the file-config scope
-    // (the same arg list means different things under each) and includes the
-    // full arg list. The `\0` separators can't collide with real config keys.
+    // Key by scope + args; the same arg list means different things under the
+    // repo-config vs file-config scope.
     let cache_key = {
         let scope = if use_repo_config { "repo" } else { "file" };
         let mut k = String::from(scope);
@@ -97,8 +96,7 @@ pub fn config_output(ctx: &Context, args: &[&str]) -> String {
         // require_repo inside a subshell only prints; it can't exit the parent
         if !Path::new(&ctx.repo).is_dir() {
             eprintln!("ERROR: Git repo does not exist. did you forget to run 'init' or 'clone'?");
-            // Not cached: this early-out spawns nothing and depends on the repo
-            // materializing later in the same run (e.g. clone/init).
+            // Not cached: the repo may materialize later in the same run (clone/init).
             return String::new();
         }
         util::record_spawn(&ctx.git_program, args);
@@ -150,16 +148,10 @@ how to adjust them.\n"
         return;
     }
 
-    // This command may mutate configuration; drop any memoized reads so a
-    // later `config_output` in the same run reflects the new value.
-    ctx.invalidate_config_cache();
-
     let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
     let use_repo_config = args.iter().any(|a| is_local_option(a));
     if use_repo_config {
         git::require_repo(ctx);
-        // operate on the yadm repo's configuration file
-        // this is always local to the machine
         util::record_spawn(&ctx.git_program, &arg_refs);
         let _ = Command::new(git::git_exe(ctx))
             .arg("config")
@@ -167,9 +159,7 @@ how to adjust them.\n"
             .status();
         ctx.changes_possible = true;
     } else {
-        // make sure parent folder of config file exists
         paths::assert_parent(&ctx.config_file);
-        // operate on the yadm configuration file
         util::record_spawn(&ctx.git_program, &arg_refs);
         let _ = Command::new(git::git_exe(ctx))
             .arg("config")
@@ -180,6 +170,6 @@ how to adjust them.\n"
             .args(args)
             .status();
     }
-    // And invalidate again afterwards for good measure — the write has landed.
+    // Drop memoized reads so later config_output in this run sees the new value.
     ctx.invalidate_config_cache();
 }

@@ -29,11 +29,9 @@ pub fn cmd(ctx: &Context) -> Command {
     Command::new(git_exe(ctx))
 }
 
-/// The program string to spawn git with: the absolute path resolved by
-/// `require_git` when available, else the verbatim `git_program`. Spawning an
-/// absolute path lets `Command` skip a PATH re-scan on every call. This never
-/// changes *which* git runs (it's the same file `command_path` found), only how
-/// it's located, so behaviour stays byte-compatible.
+/// The program to spawn git with: the absolute path resolved by `require_git`,
+/// else the verbatim `git_program`. Same file either way — an absolute path
+/// just lets `Command` skip the per-call PATH re-scan.
 pub fn git_exe(ctx: &Context) -> &str {
     if ctx.git_program_resolved.is_empty() {
         &ctx.git_program
@@ -92,10 +90,8 @@ pub fn require_git(ctx: &mut Context) {
         ctx.git_program = alt_git;
         more_info = "\\nThis command has been set via the yadm.git-program configuration.";
     }
-    // Resolve git's absolute path once (this is the same PATH lookup the old
-    // command_exists did, so no extra work). Caching it lets every later spawn
-    // skip re-scanning PATH inside Command; error text below still uses the
-    // verbatim git_program, so output stays byte-identical to yadm.
+    // Resolve git's absolute path once so later spawns skip re-scanning PATH.
+    // Error text below still uses the verbatim git_program.
     match util::command_path(&ctx.git_program) {
         Some(path) => ctx.git_program_resolved = path,
         None => {
@@ -139,9 +135,8 @@ pub fn git_command(ctx: &mut Context, args: &[String]) -> i32 {
     let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
     util::record_spawn(&ctx.git_program, &arg_refs);
     let code = exit_code(cmd(ctx).args(&args).status());
-    // A passed-through git command may have changed configuration (e.g.
-    // `yadm gitconfig ...`); drop memoized reads so the auto_alt/auto_perms
-    // processing that follows sees any new values.
+    // A passthrough (e.g. `yadm gitconfig ...`) may have changed config; clear
+    // memoized reads before auto_alt/auto_perms run.
     ctx.invalidate_config_cache();
     code
 }
