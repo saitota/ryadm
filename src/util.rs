@@ -168,7 +168,8 @@ mod tests {
 
     fn tmp_home() -> String {
         let n = COUNTER.fetch_add(1, Ordering::SeqCst);
-        let dir = std::env::temp_dir().join(format!("ryadm-util-test-{}-{}", std::process::id(), n));
+        let dir =
+            std::env::temp_dir().join(format!("ryadm-util-test-{}-{}", std::process::id(), n));
         std::fs::create_dir_all(&dir).unwrap();
         dir.to_string_lossy().into_owned()
     }

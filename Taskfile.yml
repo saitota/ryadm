@@ -1,8 +1,7 @@
 version: '3'
 
 vars:
-  # Last commit that contains the original bash yadm; the differential
-  # compatibility tests run ryadm side-by-side against this exact script.
+  # Last commit holding the original bash yadm; test:compat diffs against it.
   YADM_REF: bbb58e6
   REPO: saitota/ryadm
 
@@ -65,26 +64,50 @@ tasks:
     cmds:
       - cargo install --path . --locked
 
-  release:
-    desc: 'Publish a GitHub release. Auto-bumps the patch of the latest vX.Y.Z; override with TAG=v1.2.0'
+  tmp-version-bump:
+    desc: 'Open a PR bumping Cargo.toml to the next patch (or VERSION=1.2.0). Merge it, then run `task release`.'
     preconditions:
       - sh: git diff --quiet && git diff --cached --quiet
         msg: 'Working tree is dirty; commit or stash first'
     vars:
-      # Latest release tag, then bump patch (v1.0.0 if none). TAG=... overrides.
-      TAG:
-        sh: |
-          if [ -n "{{.TAG}}" ]; then echo "{{.TAG}}"; exit; fi
-          latest=$(gh release list --repo {{.REPO}} --limit 100 --json tagName --jq '.[].tagName' \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
-          if [ -z "$latest" ]; then echo "v1.0.0"; exit; fi
-          echo "$latest" | awk -F. '{printf "%s.%s.%d\n", $1, $2, $3+1}'
-      # SemVer form (no leading v) stamped into the binary and asset names.
+      # Patch-bump whichever is higher: latest GitHub tag or Cargo.toml.
       VERSION:
-        sh: echo '{{.TAG}}' | sed 's/^v//'
+        sh: |
+          if [ -n "{{.VERSION}}" ]; then echo "{{.VERSION}}"; exit; fi
+          latest=$(gh release list --repo {{.REPO}} --limit 100 --json tagName --jq '.[].tagName' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed 's/^v//')
+          manifest=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          highest=$(printf '%s\n%s\n' "$latest" "$manifest" | sort -V | tail -1)
+          echo "$highest" | awk -F. '{printf "%s.%s.%d\n", $1, $2, $3+1}'
+      BRANCH: bump-v{{.VERSION}}
+    cmds:
+      - git switch -c {{.BRANCH}}
+      - sed -i '' 's/^version = ".*"/version = "{{.VERSION}}"/' Cargo.toml
+      - cargo build --quiet
+      - git add Cargo.toml Cargo.lock
+      - git commit -m "Bump version to {{.VERSION}}"
+      - git push -u origin {{.BRANCH}}
+      - gh pr create --repo {{.REPO}} --assignee @me --title "Bump version to {{.VERSION}}" --body "Version bump to {{.VERSION}}. Merge, then run \`task release\`." --base main --head {{.BRANCH}}
+      - git switch main
+
+  release:
+    desc: 'From main, publish the Cargo.toml version to crates.io and cut the matching GitHub release. Bump first with `task tmp-version-bump`.'
+    vars:
+      VERSION:
+        sh: sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1
+      TAG: v{{.VERSION}}
+    preconditions:
+      - sh: git diff --quiet && git diff --cached --quiet
+        msg: 'Working tree is dirty; commit or stash first'
+      - sh: '[ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]'
+        msg: 'Run release from an up-to-date main (merge the version bump PR first)'
+      - sh: '! gh release view {{.TAG}} --repo {{.REPO}} >/dev/null 2>&1'
+        msg: 'Release {{.TAG}} already exists; run `task tmp-version-bump` to bump first'
     cmds:
       - RYADM_VERSION={{.TAG}} cargo build --release
       - '[ "$(./target/release/ryadm version | head -1)" = "ryadm version {{.VERSION}}" ]'
+      # crates.io is irreversible, so publish before touching GitHub.
+      - cargo publish
       - mkdir -p dist
       - tar -czf dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz -C target/release ryadm
       - shasum -a 256 dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz > dist/ryadm-{{.VERSION}}-aarch64-apple-darwin.tar.gz.sha256
